@@ -1,0 +1,52 @@
+<script src="http://underscorejs.org/underscore-min.js"></script>
+<script src="../eyetribe-0.0.1.js"></script>
+
+<div id="message">
+  <p><b>Press spacebar to pause.</b></p>
+</div>
+<div id="dump"></div>
+
+<script>
+(function() {
+  var dump = document.getElementById('dump');
+
+  EyeTribe.loop(function(frame) {
+    if (paused) return;
+    console.log(frame);
+
+    var html = 'Frame: <ul>';
+    html += '<li>Status: ' + frame.state + '</li>';
+    html += '<li>Timestamp: ' + frame.timestamp + '</li>';
+    html += '<li>Is fixated: ' + frame.fix + '</li>';
+    html += position2html(frame.raw, 'Raw position');
+    html += position2html(frame.avg, 'Average position');
+    html += eye2html(frame.righteye, 'Right eye');
+    html += eye2html(frame.lefteye, 'Left eye');
+    html += '</ul>';
+    dump.innerHTML = html;
+  });
+
+  function eye2html(eye, label) {
+    return '<li>' + label + ':<ul>'
+      + position2html(eye.raw, 'Raw position')
+      + position2html(eye.avg, 'Average position')
+      + '<li>Pupil size: ' + eye.psize + '</li>'
+      + position2html(eye.pcenter, 'Pupil center position')
+      + '</ul></li>'
+  }
+
+  function position2html(position, label) {
+    return '<li>' + label + ': ' + position.x + ', ' + position.y + '</li>';
+  }
+
+
+  var paused = false;
+
+  window.onkeypress = function(e) {
+    console.log(e);
+    if (e.charCode == 32) { // spacebar
+      paused ^= true;
+    }
+  };
+})();
+</script>
