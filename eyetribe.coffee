@@ -23,6 +23,10 @@ class Tracker
       tracker.set tracker.values
       tracker.heartbeat = new Heartbeat @
         .start();
+    @socket.onclose = (event)->
+      tracker.heartbeat.stop()
+    @socket.onerror = (error)->
+      console.log 'onerror', error
     @
 
   on: (type, listener)->
@@ -71,12 +75,16 @@ class Heartbeat
     , 3000
     @
 
+  stop: ->
+    clearInterval @intervalId
+    delete @intervalId
+
 
 class @EyeTribe
   @Tracker = Tracker
   @loop = (config, callback)->
     if typeof config == 'function'
       [callback, config] = [config, {}]
-    new Tracker config
+    @loopTracker = new Tracker config
       .on 'frame', callback
       .connect()
