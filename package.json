@@ -1,15 +1,16 @@
 {
   "name": "eye-tribe-websocket",
+  "version": "0.0.2",
   "description": "Websocket proxy for The Eye Tribe Tracker",
-  "version": "0.0.1",
   "author": "OKAMURA, Kazuhide <okamura@techlier.jp>",
   "repository": {
     "url": "git://github.com/kzokm/eyetribe-websocket.git"
   },
   "dependencies": {
-    "websocket.io": "0.4.20"
+    "coffee-script": "1.7.1",
+    "websocket.io": "0.2.1"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "coffee server.coffee"
   }
 }
