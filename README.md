@@ -3,7 +3,7 @@
 ## Run
 
 1. `npm install`
-2. `coffee server.js`
+2. `coffee server.coffee`
 
 ## Example
 ```html
