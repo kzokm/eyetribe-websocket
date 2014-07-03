@@ -1,7 +1,7 @@
 {
   "name": "eye-tribe-websocket",
   "version": "0.0.2",
-  "description": "Websocket proxy for The Eye Tribe Tracker",
+  "description": "WebSocket proxy for The Eye Tribe Tracker",
   "author": "OKAMURA, Kazuhide <okamura@techlier.jp>",
   "repository": {
     "url": "git://github.com/kzokm/eyetribe-websocket.git"
