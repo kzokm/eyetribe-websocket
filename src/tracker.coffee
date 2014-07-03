@@ -53,38 +53,3 @@ class Tracker
         dispatcher.trigger 'value', response.values
         _.each response.values, (value, key)->
           dispatcher.trigger(key, value)
-
-
-class EventDispatcher
-  setListener: (type, listener)->
-    (this._map ||= {})[type] = listener;
-
-  trigger: (type, value)->
-    if this._map
-      listener = this._map[type];
-      listener.call this, value if listener
-
-
-class Heartbeat
-  constructor: (@socket)->
-
-  start: ->
-    socket = @socket;
-    @intervalId = setInterval ->
-      socket.send '{"category":"heartbeat"}'
-    , 3000
-    @
-
-  stop: ->
-    clearInterval @intervalId
-    delete @intervalId
-
-
-class @EyeTribe
-  @Tracker = Tracker
-  @loop = (config, callback)->
-    if typeof config == 'function'
-      [callback, config] = [config, {}]
-    @loopTracker = new Tracker config
-      .on 'frame', callback
-      .connect()
