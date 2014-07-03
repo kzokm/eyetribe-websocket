@@ -17,7 +17,7 @@ class Tracker
     tracker = @
     @socket = new WebSocket 'ws://' + @host + ':' + @port
     @socket.onmessage = (message)->
-      tracker.dispatchResponse message.data
+      tracker.handleResponse message.data
     @socket.onopen = (event)->
       tracker.onConnect
       tracker.set tracker.values
@@ -30,8 +30,8 @@ class Tracker
     @
 
   on: (type, listener)->
-    @dispatcher ||= new EventDispatcher()
-    @dispatcher.setListener type, listener
+    @emitter ||= new EventEmmiter()
+    @emitter.setListener type, listener
     @
 
   send: (request)->
@@ -45,11 +45,11 @@ class Tracker
       request: 'set'
       values: values
 
-  dispatchResponse: (json)->
-    dispatcher = @dispatcher
-    if dispatcher
+  handleResponse: (json)->
+    emitter = @emitter
+    if emitter
       response = JSON.parse json
       if response.request == 'get'
-        dispatcher.trigger 'value', response.values
+        emitter.trigger 'value', response.values
         _.each response.values, (value, key)->
-          dispatcher.trigger(key, value)
+          emitter.trigger key, value

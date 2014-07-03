@@ -4,7 +4,7 @@ fs = require 'fs'
 files =
   eyetribe: [
     'tracker'
-    'event_dispatcher'
+    'event_emitter'
     'heartbeat'
     'eyetribe'
   ]
