@@ -1,7 +1,11 @@
+_ = require 'underscore'
+Heartbeat = require './heartbeat'
+EventEmmiter = require './event_emitter'
+
 class Tracker
   defaultConfig =
     host: '$SERVER_HOST'
-    port: $SERVER_PORT
+    port: parseInt '$SERVER_PORT'
     version: 1
     push: true
 
@@ -15,7 +19,7 @@ class Tracker
 
   connect: ->
     tracker = @
-    @socket = new WebSocket 'ws://' + @host + ':' + @port
+    @socket = new WebSocket "ws://#{@host}:#{@port}"
     @socket.onmessage = (message)->
       tracker.handleResponse message.data
     @socket.onopen = (event)->
@@ -53,3 +57,5 @@ class Tracker
         emitter.trigger 'value', response.values
         _.each response.values, (value, key)->
           emitter.trigger key, value
+
+module.exports = Tracker

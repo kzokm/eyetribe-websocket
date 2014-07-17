@@ -1,22 +1,47 @@
-coffee = require 'coffee-script'
-fs = require 'fs'
+# -*- mode: coffee -*-
+# vi: set ft=coffee :
 
-files =
-  eyetribe: [
-    'tracker'
-    'event_emitter'
-    'heartbeat'
-    'eyetribe'
-  ]
+require 'coffee-script/register'
+{full: version} = require './lib/version'
 
-task 'compile', (options)->
-  for output, inputs of files
-    raw = ''
-    for file in inputs
-      file = 'src/' + file + '.coffee'
-      raw += fs.readFileSync file, 'utf8'
-        .toString()
-      raw += '\n'
-    code = coffee.compile raw
-    output = 'lib/' + output + '.js'
-    fs.writeFileSync output, code, 'utf8'
+
+TARGET = "eyetribe-#{version}.js"
+TARGET_MIN = "eyetribe-#{version}.min.js"
+ENTRY = 'template/entry.coffee'
+
+
+task 'all', (options)->
+  browserify options, [ compress ]
+
+task 'browserify', (options)->
+  browserify options
+
+task 'compress', (options)->
+  compress options
+
+
+browserify = (options, followings)->
+  run "node node_modules/browserify/bin/cmd.js -t coffeeify --extension=.coffee #{ENTRY} -o #{TARGET}",
+    followings
+
+compress = (options, followings)->
+  run "node node_modules/uglify-js/bin/uglifyjs #{TARGET} -o #{TARGET_MIN}",
+    followings
+
+
+{exec} = require 'child_process'
+
+run = (command, followings)->
+  console.log command
+  exec command, (error, stdout, stderr)->
+    console.log stdout if stdout
+    console.error stderr if stderr
+    unless error
+      next = followings?.shift()
+      next followings if next
+
+
+task 'clean', (options)->
+  fs = require 'fs'
+  fs.unlink TARGET, ->
+  fs.unlink TARGET_MIN, ->

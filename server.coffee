@@ -1,7 +1,9 @@
+require 'coffee-script/register'
+{full: version} = require './lib/version'
+
 net = require 'net'
 http = require 'http'
 ws = require 'websocket.io'
-coffee = require 'coffee-script'
 fs = require 'fs'
 
 SERVER_HOST = '127.0.0.1'
@@ -15,13 +17,27 @@ server = http.createServer()
     console.log 'LISTEN: ' + SERVER_PORT
   .on 'request', (request, response)->
     if request.url == '/eyetribe.js'
-      code = precompiled() || compile()
-      code = code.replace '$SERVER_HOST', SERVER_HOST
-      code = code.replace '$SERVER_PORT', SERVER_PORT
+      code = readScript "./eyetribe-#{version}.js"
+    else if request.url == '/eyetribe.min.js'
+      code = readScript "./eyetribe-#{version}.min.js"
+    if code
       response.writeHead 200,
         'Content-Type': 'text/javascript; charset: UTF-8'
       response.write code
+    else
+      response.writeHead 404
     response.end()
+
+
+readScript = (file) ->
+  code = readFile file
+  code = code?.replace '$SERVER_HOST', SERVER_HOST
+  code = code?.replace '$SERVER_PORT', SERVER_PORT
+
+readFile = (file) ->
+  if fs.existsSync file
+    code = fs.readFileSync file, 'utf8'
+      .toString()
 
 ws.attach server
   .on 'connection', (sock)->
@@ -48,24 +64,3 @@ ws.attach server
         console.error 'ERROR: ' + error
       .connect TARGET_PORT, TARGET_HOST, ->
         console.log 'OPEN'
-
-precompiled = ->
-  file = 'lib/eyetribe.js'
-  if fs.existsSync file
-    fs.readFileSync file, 'utf8'
-      .toString()
-
-compile = ->
-  sources = [
-    'tracker'
-    'event_dispatcher'
-    'heartbeat'
-    'eyetribe'
-  ]
-  raw = ''
-  for file in sources
-    file = 'src/' + file + '.coffee'
-    raw += fs.readFileSync file, 'utf8'
-      .toString()
-    raw += '\n'
-  coffee.compile raw

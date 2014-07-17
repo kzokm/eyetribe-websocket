@@ -11,3 +11,5 @@ class Heartbeat
   stop: ->
     clearInterval @intervalId
     delete @intervalId
+
+module.exports = Heartbeat
