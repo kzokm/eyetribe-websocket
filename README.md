@@ -7,7 +7,6 @@
 
 ## Example
 ```html
-<script src="http://underscorejs.org/underscore-min.js"></script>
 <script src="http://localhost:6556/eyetribe.js"></script>
 <script>
   EyeTrie.loop(function(frame) {
