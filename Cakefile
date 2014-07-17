@@ -4,7 +4,6 @@
 require 'coffee-script/register'
 {full: version} = require './lib/version'
 
-
 TARGET = "eyetribe-#{version}.js"
 TARGET_MIN = "eyetribe-#{version}.min.js"
 ENTRY = 'template/entry.coffee'

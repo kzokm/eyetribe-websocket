@@ -1,5 +1,5 @@
 module.exports =
-  full: '0.0.4'
+  full: '0.1.0'
   major: 0
-  minor: 0
-  dot: 4
+  minor: 1
+  dot: 0

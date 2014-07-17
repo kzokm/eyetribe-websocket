@@ -55,7 +55,7 @@ ws.attach server
 
     target = new net.Socket()
       .on 'data', (data)->
-        console.log 'RESPONSE: ' + data
+        #console.log 'RESPONSE: ' + data
         sock.write data
       .on 'close', (data)->
         console.log 'CLOSED'

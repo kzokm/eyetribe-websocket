@@ -1,5 +1,6 @@
 _ = require 'underscore'
 Heartbeat = require './heartbeat'
+Frame = require './gazedata'
 {EventEmitter} = require 'events'
 
 class Tracker extends EventEmitter
@@ -47,9 +48,12 @@ class Tracker extends EventEmitter
   handleResponse: (json)->
     tracker = @
     response = JSON.parse json
-    if response.request == 'get'
-      tracker.emit 'value', response.values
+    if response.category == 'tracker' && response.request == 'get'
+      frame = response.values.frame
+      @frame = if frame then new Frame(frame) else undefined
+      @emit 'values', response.values
       _.each response.values, (value, key)->
-        tracker.emit key, value
+        tracker.emit key, value unless key == 'frame'
+      @emit 'frame', @frame if @frame
 
 module.exports = Tracker
