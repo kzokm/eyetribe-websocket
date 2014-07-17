@@ -1,8 +1,8 @@
 _ = require 'underscore'
 Heartbeat = require './heartbeat'
-EventEmmiter = require './event_emitter'
+{EventEmitter} = require 'events'
 
-class Tracker
+class Tracker extends EventEmitter
   defaultConfig =
     host: '$SERVER_HOST'
     port: parseInt '$SERVER_PORT'
@@ -33,11 +33,6 @@ class Tracker
       console.log 'onerror', error
     @
 
-  on: (type, listener)->
-    @emitter ||= new EventEmmiter()
-    @emitter.setListener type, listener
-    @
-
   send: (request)->
     if request instanceof Object
       request = JSON.stringify request
@@ -50,12 +45,11 @@ class Tracker
       values: values
 
   handleResponse: (json)->
-    emitter = @emitter
-    if emitter
-      response = JSON.parse json
-      if response.request == 'get'
-        emitter.trigger 'value', response.values
-        _.each response.values, (value, key)->
-          emitter.trigger key, value
+    tracker = @
+    response = JSON.parse json
+    if response.request == 'get'
+      tracker.emit 'value', response.values
+      _.each response.values, (value, key)->
+        tracker.emit key, value
 
 module.exports = Tracker
