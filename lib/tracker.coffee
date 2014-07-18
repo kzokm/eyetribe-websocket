@@ -19,7 +19,7 @@ class Tracker extends EventEmitter
       .on 'tracker', (data)->
         handleData.call tracker, data
       .on 'connect', (data)->
-        tracker.set _.pick(tracker.config, Protocol.MUTABLE_CONFIG_KEYS)
+        tracker.set tracker.config
         tracker.emit 'connect'
       .on 'disconnect', (code, reason)->
         tracker.emit 'disconnect', code, reason
@@ -41,6 +41,7 @@ class Tracker extends EventEmitter
 
 
   set: (values)->
+    values = _.pick values, Protocol.MUTABLE_CONFIG_KEYS
     @connection.send
       category: 'tracker'
       request: 'set'
@@ -48,7 +49,7 @@ class Tracker extends EventEmitter
     @
 
   get: (keys)->
-    keys = [ keys ] unless Array.isArray keys
+    keys = [ keys ] if _.isString keys
     @connection.send
       category: 'tracker'
       request: 'get'
