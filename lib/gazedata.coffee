@@ -2,6 +2,12 @@ _ = require 'underscore'
 Point2D = require './point2d'
 
 class Frame
+  @STATE_TRACKING_GAZE = 1
+  @STATE_TRACKING_EYES = 1 << 1
+  @STATE_TRACKING_PRESENCE = 1 << 2
+  @STATE_TRACKING_FAIL = 1 << 3
+  @STATE_TRACKING_LOST = 1 << 4
+
   constructor: (data)->
     @data = data
 
