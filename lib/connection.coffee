@@ -51,9 +51,11 @@ class Connection extends EventEmitter
       delete @heartbeat
       @emit 'disconnect', code, reason
 
-  handleResponse = (json)->
+  handleResponse = (data)->
     connection = @
-    response = JSON.parse json
-    @emit response.category, response
+    for json in data.split "\n"
+      if json.length > 0
+        response = JSON.parse json
+        @emit response.category, response
 
 module.exports = Connection
