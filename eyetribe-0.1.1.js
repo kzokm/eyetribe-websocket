@@ -1,4 +1,107 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var Connection, EventEmitter, _,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_ = require('underscore');
+
+EventEmitter = require('events').EventEmitter;
+
+Connection = (function(_super) {
+  var defaultConfig, handleClose, handleOpen, handleResponse;
+
+  __extends(Connection, _super);
+
+  defaultConfig = {
+    host: '$SERVER_HOST',
+    port: parseInt('$SERVER_PORT')
+  };
+
+  function Connection(config) {
+    if (config == null) {
+      config = {};
+    }
+    config = _.defaults(config, defaultConfig);
+    this.host = config.host;
+    this.port = config.port;
+  }
+
+  Connection.prototype.connect = function() {
+    var connection;
+    if (!this.socket) {
+      connection = this;
+      this.socket = new WebSocket("ws://" + this.host + ":" + this.port);
+      this.socket.onopen = function() {
+        return handleOpen.call(connection);
+      };
+      this.socket.onclose = function(data) {
+        return handleClose.call(connection, data.code, data.reason);
+      };
+      this.socket.onmessage = function(message) {
+        return handleResponse.call(connection, message.data);
+      };
+      this.socket.onerror = function(error) {
+        return console.log('onerror', error);
+      };
+    }
+    return this;
+  };
+
+  Connection.prototype.disconnect = function() {
+    if (this.socket) {
+      this.socket.close();
+      return delete this.socket;
+    }
+  };
+
+  Connection.prototype.send = function(request) {
+    if (this.socket) {
+      if (request instanceof Object) {
+        request = JSON.stringify(request);
+      }
+      return this.socket.send(request);
+    }
+  };
+
+  handleOpen = function() {
+    if (!this.connected) {
+      this.connected = true;
+      return this.emit('connect');
+    }
+  };
+
+  handleClose = function(code, reason) {
+    if (this.connected) {
+      this.connected = false;
+      return this.emit('disconnect', code, reason);
+    }
+  };
+
+  handleResponse = function(data) {
+    var connection, json, response, _i, _len, _ref, _results;
+    connection = this;
+    _ref = data.split("\n");
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      json = _ref[_i];
+      if (json.length > 0) {
+        response = JSON.parse(json);
+        _results.push(this.emit(response.category, response));
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  return Connection;
+
+})(EventEmitter);
+
+module.exports = Connection;
+
+
+},{"events":9,"underscore":10}],2:[function(require,module,exports){
 var Eye, Frame, GazeData, Point2D, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8,6 +111,16 @@ _ = require('underscore');
 Point2D = require('./point2d');
 
 Frame = (function() {
+  Frame.STATE_TRACKING_GAZE = 1;
+
+  Frame.STATE_TRACKING_EYES = 1 << 1;
+
+  Frame.STATE_TRACKING_PRESENCE = 1 << 2;
+
+  Frame.STATE_TRACKING_FAIL = 1 << 3;
+
+  Frame.STATE_TRACKING_LOST = 1 << 4;
+
   function Frame(data) {
     this.data = data;
     this.timestampString = data.timestamp;
@@ -59,26 +172,43 @@ GazeData = (function(_super) {
 module.exports = GazeData;
 
 
-},{"./point2d":4,"underscore":8}],2:[function(require,module,exports){
+},{"./point2d":5,"underscore":10}],3:[function(require,module,exports){
 var Heartbeat;
 
 Heartbeat = (function() {
-  function Heartbeat(socket) {
-    this.socket = socket;
-  }
+  function Heartbeat() {}
 
-  Heartbeat.prototype.start = function() {
-    var socket;
-    socket = this.socket;
-    this.intervalId = setInterval(function() {
-      return socket.send('{"category":"heartbeat"}');
-    }, 3000);
+  Heartbeat.intervalMillis = void 0;
+
+  Heartbeat.start = function(tracker) {
+    return new Heartbeat().start(tracker);
+  };
+
+  Heartbeat.prototype.start = function(tracker) {
+    var connection, self;
+    self = this;
+    connection = tracker.connection;
+    if (Heartbeat.intervalMillis != null) {
+      this.intervalId = setInterval(function() {
+        return connection.send('{"category":"heartbeat"}');
+      }, Heartbeat.intervalMillis);
+      connection.once('disconnect', function() {
+        return self.stop();
+      });
+    } else {
+      tracker.get('heartbeatinterval', function(value) {
+        Heartbeat.intervalMillis = value;
+        return self.start(tracker);
+      });
+    }
     return this;
   };
 
   Heartbeat.prototype.stop = function() {
-    clearInterval(this.intervalId);
-    return delete this.intervalId;
+    if (this.intervalId != null) {
+      clearInterval(this.intervalId);
+      return delete this.intervalId;
+    }
   };
 
   return Heartbeat;
@@ -88,7 +218,7 @@ Heartbeat = (function() {
 module.exports = Heartbeat;
 
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var EyeTribe;
 
 EyeTribe = (function() {
@@ -98,12 +228,20 @@ EyeTribe = (function() {
 
   EyeTribe.version = require('./version');
 
+  EyeTribe.Protocol = require('./protocol');
+
+  EyeTribe.GazeData = require('./gazedata');
+
+  EyeTribe.Point2D = require('./point2d');
+
+  EyeTribe._ = require('underscore');
+
   EyeTribe.loop = function(config, callback) {
     var _ref;
     if (typeof config === 'function') {
       _ref = [config, {}], callback = _ref[0], config = _ref[1];
     }
-    return this.loopTracker = new this.Tracker(config).on('frame', callback).connect();
+    return this.loopTracker = new this.Tracker(config).loop(callback);
   };
 
   return EyeTribe;
@@ -113,7 +251,7 @@ EyeTribe = (function() {
 module.exports = EyeTribe;
 
 
-},{"./tracker":5,"./version":6}],4:[function(require,module,exports){
+},{"./gazedata":2,"./point2d":5,"./protocol":6,"./tracker":7,"./version":8,"underscore":10}],5:[function(require,module,exports){
 var Point2D;
 
 Point2D = (function() {
@@ -153,27 +291,88 @@ Point2D = (function() {
 module.exports = Point2D;
 
 
-},{}],5:[function(require,module,exports){
-var EventEmitter, Frame, Heartbeat, Tracker, _,
+},{}],6:[function(require,module,exports){
+var Protocol;
+
+Protocol = (function() {
+  function Protocol() {}
+
+  Protocol.CATEGORIES = ['tracker', 'calibration', 'hertbeat'];
+
+  Protocol.STATUSCODE_SUCCESS = 200;
+
+  Protocol.STATUSCODE_NOT_FOUND = 400;
+
+  Protocol.STATUSCODE_FAILURE = 500;
+
+  Protocol.STATUSCODE_CALIBRATION_UPDATE = 800;
+
+  Protocol.STATUSCODE_SCREEN_UPDATE = 801;
+
+  Protocol.STATUSCODE_TRACKER_UPDATE = 802;
+
+  Protocol.MUTABLE_CONFIG_KEYS = ['version', 'push', 'screenindex', 'screenresw', 'screenresh', 'screenpsyw', 'screenpsyh'];
+
+  Protocol.CONFIG_KEYS = Protocol.MUTABLE_CONFIG_KEYS.concat(['heartbeatinterval', 'trackerstate', 'framerate', 'iscalibrated', 'iscalibrating', 'calibresult']);
+
+  Protocol.PROPERTY_KEYS = Protocol.CONFIG_KEYS.concat(['frame']);
+
+  Protocol.TRACKER_CONNECTED = 0;
+
+  Protocol.TRACKER_NOT_CONNECTED = 1;
+
+  Protocol.TRACKER_CONNECTED_BADFW = 2;
+
+  Protocol.TRACKER_CONNECTED_NOUSB3 = 3;
+
+  Protocol.TRACKER_CONNECTED_NOSTREAM = 4;
+
+  Protocol.prototype.request = function(category, request, values) {
+    return JSON.stringify({
+      category: category,
+      request: request,
+      values: values
+    });
+  };
+
+  Protocol.prototype.response = function(json) {
+    return {
+      category: category,
+      request: request,
+      values: values
+    };
+  };
+
+  return Protocol;
+
+})();
+
+module.exports = Protocol;
+
+
+},{}],7:[function(require,module,exports){
+var Connection, EventEmitter, Frame, Heartbeat, Protocol, Tracker, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _ = require('underscore');
 
+Connection = require('./connection');
+
 Heartbeat = require('./heartbeat');
+
+Protocol = require('./protocol');
 
 Frame = require('./gazedata');
 
 EventEmitter = require('events').EventEmitter;
 
 Tracker = (function(_super) {
-  var defaultConfig;
+  var defaultConfig, handleData;
 
   __extends(Tracker, _super);
 
   defaultConfig = {
-    host: '$SERVER_HOST',
-    port: parseInt('$SERVER_PORT'),
     version: 1,
     push: true
   };
@@ -182,60 +381,43 @@ Tracker = (function(_super) {
     if (config == null) {
       config = {};
     }
-    config = _.defaults(config, defaultConfig);
-    this.host = config.host;
-    this.port = config.port;
-    this.values = {
-      version: config.version,
-      push: config.push
-    };
+    this.config = _.defaults(config, defaultConfig);
   }
 
-  Tracker.prototype.connect = function() {
+  Tracker.prototype.connect = function(config) {
     var tracker;
+    if (config == null) {
+      config = this.config;
+    }
     tracker = this;
-    this.socket = new WebSocket("ws://" + this.host + ":" + this.port);
-    this.socket.onmessage = function(message) {
-      return tracker.handleResponse(message.data);
-    };
-    this.socket.onopen = function(event) {
-      tracker.onConnect;
-      tracker.set(tracker.values);
-      return tracker.heartbeat = new Heartbeat(this).start();
-    };
-    this.socket.onclose = function(event) {
-      return tracker.heartbeat.stop();
-    };
-    this.socket.onerror = function(error) {
-      return console.log('onerror', error);
-    };
+    this.connection || (this.connection = new Connection(config).connect().on('tracker', function(data) {
+      return handleData.call(tracker, data);
+    }).on('connect', function(data) {
+      tracker.set(tracker.config);
+      tracker.get(Protocol.CONFIG_KEYS, function(values) {
+        return _.extend(tracker.config, values);
+      });
+      Heartbeat.start(tracker);
+      return tracker.emit('connect');
+    }).on('disconnect', function(code, reason) {
+      delete tracker.connection;
+      return tracker.emit('disconnect', code, reason);
+    }));
     return this;
   };
 
-  Tracker.prototype.send = function(request) {
-    if (request instanceof Object) {
-      request = JSON.stringify(request);
-    }
-    return this.socket.send(request);
+  Tracker.prototype.disconnect = function() {
+    return this.connection.disconnect();
   };
 
-  Tracker.prototype.set = function(values) {
-    return this.send({
-      category: 'tracker',
-      request: 'set',
-      values: values
-    });
-  };
-
-  Tracker.prototype.handleResponse = function(json) {
-    var frame, response, tracker;
+  handleData = function(data) {
+    var frame, tracker;
     tracker = this;
-    response = JSON.parse(json);
-    if (response.category === 'tracker' && response.request === 'get') {
-      frame = response.values.frame;
+    if (data.request === 'get' && (data.values != null)) {
+      frame = data.values.frame;
       this.frame = frame ? new Frame(frame) : void 0;
-      this.emit('values', response.values);
-      _.each(response.values, function(value, key) {
+      this.emit('values', data.values);
+      _.each(data.values, function(value, key) {
         if (key !== 'frame') {
           return tracker.emit(key, value);
         }
@@ -246,6 +428,53 @@ Tracker = (function(_super) {
     }
   };
 
+  Tracker.prototype.set = function(values) {
+    values = _.pick(values, Protocol.MUTABLE_CONFIG_KEYS);
+    this.connection.send({
+      category: 'tracker',
+      request: 'set',
+      values: values
+    });
+    return this;
+  };
+
+  Tracker.prototype.get = function(keys, callback) {
+    var key, valuesCallback;
+    if (_.isString(keys)) {
+      key = keys;
+      (keys = {})[key] = callback;
+      callback = void 0;
+    }
+    if (_.isArray(keys)) {
+      if (callback != null) {
+        valuesCallback = function(values) {
+          if (callback.call(this, values)) {
+            return this.removeListener('values', valuesCallback);
+          }
+        };
+        this.on('values', valuesCallback);
+      }
+    } else {
+      for (key in keys) {
+        callback = keys[key];
+        if (callback) {
+          this.once(key, callback);
+        }
+      }
+      keys = _.keys(keys);
+    }
+    this.connection.send({
+      category: 'tracker',
+      request: 'get',
+      values: keys
+    });
+    return this;
+  };
+
+  Tracker.prototype.loop = function(callback) {
+    return this.on('frame', callback).connect();
+  };
+
   return Tracker;
 
 })(EventEmitter);
@@ -253,16 +482,16 @@ Tracker = (function(_super) {
 module.exports = Tracker;
 
 
-},{"./gazedata":1,"./heartbeat":2,"events":7,"underscore":8}],6:[function(require,module,exports){
+},{"./connection":1,"./gazedata":2,"./heartbeat":3,"./protocol":6,"events":9,"underscore":10}],8:[function(require,module,exports){
 module.exports = {
-  full: '0.1.0',
+  full: '0.1.1',
   major: 0,
   minor: 1,
-  dot: 0
+  dot: 1
 };
 
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -567,7 +796,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 //     Underscore.js 1.6.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -1912,8 +2141,8 @@ function isUndefined(arg) {
   }
 }).call(this);
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 window.EyeTribe = require('../lib/index');
 
 
-},{"../lib/index":3}]},{},[9])
+},{"../lib/index":4}]},{},[11])
