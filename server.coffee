@@ -41,26 +41,29 @@ readFile = (file) ->
 
 ws.attach server
   .on 'connection', (sock)->
-    console.log 'CONNECTED'
+    console.log 'CONNECTED: WS'
 
     sock
       .on 'message', (data)->
         console.log 'REQUEST: ' + data
         target.write data
       .on 'close', (data)->
-        console.log 'DISCONNECTED'
+        console.log 'DISCONNECTED: WS'
         target.end()
       .on 'error', (error)->
-        console.error 'ERROR: ' + error
+        console.error 'ERROR: WS: ' + error
 
     target = new net.Socket()
       .on 'data', (data)->
         #console.log 'RESPONSE: ' + data
-        sock.write data
+        try
+          sock.write data
+        catch e
+          console.error 'ERROR: WS: ' + e
       .on 'close', (data)->
-        console.log 'CLOSED'
+        console.log 'CLOSED: TRACKER SERVER'
         sock.end()
       .on 'error', (error)->
-        console.error 'ERROR: ' + error
+        console.error 'ERROR: TRACKER SERVER: ' + error
       .connect TARGET_PORT, TARGET_HOST, ->
-        console.log 'OPEN'
+        console.log 'OPENED: TRACKER SERVER'
