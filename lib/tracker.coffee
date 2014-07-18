@@ -1,60 +1,60 @@
 _ = require 'underscore'
-Heartbeat = require './heartbeat'
+Connection = require './connection'
+Protocol = require './protocol'
 Frame = require './gazedata'
 {EventEmitter} = require 'events'
 
 class Tracker extends EventEmitter
   defaultConfig =
-    host: '$SERVER_HOST'
-    port: parseInt '$SERVER_PORT'
     version: 1
     push: true
 
   constructor: (config = {})->
-    config = _.defaults config, defaultConfig
-    @host = config.host
-    @port = config.port
-    @values =
-      version: config.version
-      push: config.push
+    @config = _.defaults config, defaultConfig
 
-  connect: ->
+  connect: (config = @config)->
     tracker = @
-    @socket = new WebSocket "ws://#{@host}:#{@port}"
-    @socket.onmessage = (message)->
-      tracker.handleResponse message.data
-    @socket.onopen = (event)->
-      tracker.onConnect
-      tracker.set tracker.values
-      tracker.heartbeat = new Heartbeat @
-        .start();
-    @socket.onclose = (event)->
-      tracker.heartbeat.stop()
-    @socket.onerror = (error)->
-      console.log 'onerror', error
+    @connection ||= new Connection config
+      .connect()
+      .on 'tracker', (data)->
+        handleData.call tracker, data
+      .on 'connect', (data)->
+        tracker.set _.pick(tracker.config, Protocol.MUTABLE_CONFIG_KEYS)
+        tracker.emit 'connect'
+      .on 'disconnect', (code, reason)->
+        tracker.emit 'disconnect', code, reason
+        delete tracker.connection
     @
 
-  send: (request)->
-    if request instanceof Object
-      request = JSON.stringify request
-    @socket.send request
+  disconnect: ->
+    @connection.disconnect()
+
+  handleData = (data)->
+    tracker = @
+    if data.request == 'get'
+      frame = data.values.frame
+      @frame = if frame then new Frame(frame) else undefined
+      @emit 'values', data.values
+      _.each data.values, (value, key)->
+        tracker.emit key, value unless key == 'frame'
+      @emit 'frame', @frame if @frame
+
 
   set: (values)->
-    @send
+    @connection.send
       category: 'tracker'
       request: 'set'
       values: values
+    @
 
-  handleResponse: (json)->
-    tracker = @
-    response = JSON.parse json
-    if response.category == 'tracker' && response.request == 'get'
-      frame = response.values.frame
-      @frame = if frame then new Frame(frame) else undefined
-      @emit 'values', response.values
-      _.each response.values, (value, key)->
-        tracker.emit key, value unless key == 'frame'
-      @emit 'frame', @frame if @frame
+  get: (keys)->
+    keys = [ keys ] unless Array.isArray keys
+    @connection.send
+      category: 'tracker'
+      request: 'get'
+      values: keys
+    @
+
 
   loop: (callback)->
     @on 'frame', callback

@@ -1,4 +1,3 @@
-_ = require 'underscore'
 
 class Protocol
   @CATEGORIES = [
@@ -20,7 +19,7 @@ class Protocol
     'screenpsyw', 'screenpsyh'
     ]
 
-  @CONFIG_KEYS = _.extend @MUTABLE_CONFIG_KEYS, [
+  @CONFIG_KEYS = @MUTABLE_CONFIG_KEYS.concat [
     'heartbeatinterval'
     'trackerstate'
     'framerate', 'frame'

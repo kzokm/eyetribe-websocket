@@ -28,6 +28,12 @@
     html += '</ul>';
     dump.innerHTML = html;
   })
+  .on('connect', function() {
+    console.log('connected:');
+  })
+  .on('disconnect', function(code, reason) {
+    console.log('disconnected:', code, reason);
+  })
 
   function eye2html(eye, label) {
     return '<li>' + label + ':<ul>'
