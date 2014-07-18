@@ -1,5 +1,4 @@
 _ = require 'underscore'
-Heartbeat = require './heartbeat'
 {EventEmitter} = require 'events'
 
 class Connection extends EventEmitter
@@ -40,15 +39,11 @@ class Connection extends EventEmitter
   handleOpen = ->
     unless @connected
       @connected = true
-      @heartbeat = new Heartbeat @
-        .start();
       @emit 'connect'
 
   handleClose = (code, reason)->
     if @connected
       @connected = false
-      @heartbeat.stop()
-      delete @heartbeat
       @emit 'disconnect', code, reason
 
   handleResponse = (data)->

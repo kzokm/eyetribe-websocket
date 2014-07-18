@@ -1,5 +1,6 @@
 _ = require 'underscore'
 Connection = require './connection'
+Heartbeat = require './heartbeat'
 Protocol = require './protocol'
 Frame = require './gazedata'
 {EventEmitter} = require 'events'
@@ -20,10 +21,13 @@ class Tracker extends EventEmitter
         handleData.call tracker, data
       .on 'connect', (data)->
         tracker.set tracker.config
+        tracker.get Protocol.CONFIG_KEYS, (values)->
+          _.extend tracker.config, values
+        Heartbeat.start tracker
         tracker.emit 'connect'
       .on 'disconnect', (code, reason)->
-        tracker.emit 'disconnect', code, reason
         delete tracker.connection
+        tracker.emit 'disconnect', code, reason
     @
 
   disconnect: ->
@@ -31,7 +35,7 @@ class Tracker extends EventEmitter
 
   handleData = (data)->
     tracker = @
-    if data.request == 'get'
+    if data.request == 'get' && data.values?
       frame = data.values.frame
       @frame = if frame then new Frame(frame) else undefined
       @emit 'values', data.values
@@ -48,14 +52,27 @@ class Tracker extends EventEmitter
       values: values
     @
 
-  get: (keys)->
-    keys = [ keys ] if _.isString keys
+  get: (keys, callback)->
+    if _.isString keys
+      key = keys
+      (keys = {})[key] = callback
+      callback = undefined
+
+    if _.isArray keys
+      if callback?
+        valuesCallback = (values)->
+          @removeListener 'values', valuesCallback if callback.call @, values
+        @on 'values', valuesCallback
+    else
+      for key, callback of keys
+        @once key, callback if callback
+      keys = _.keys keys
+
     @connection.send
       category: 'tracker'
       request: 'get'
       values: keys
     @
-
 
   loop: (callback)->
     @on 'frame', callback

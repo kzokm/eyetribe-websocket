@@ -1,31 +1,30 @@
 class Heartbeat
-  constructor: (@connection)->
-    connection.on 'heartbeat', (data)->
-      console.log data
-
   @intervalMillis = undefined
 
-  start: ->
-    connection = @connection
+  @start: (tracker)->
+    new Heartbeat()
+      .start tracker
+
+  start: (tracker)->
+    self = @
+    connection = tracker.connection
 
     if Heartbeat.intervalMillis?
       @intervalId = setInterval ->
         connection.send '{"category":"heartbeat"}'
       , Heartbeat.intervalMillis
-    else
-      self = @
-      trackerResponseHander = (data)->
-        if data.values?.heartbeatinterval
-          Heartbeat.intervalMillis = data.values.heartbeatinterval
-          connection.removeListener 'tracker', trackerResponseHander
-          self.start()
 
-      connection.on 'tracker', trackerResponseHander
-        .send '{"category":"tracker","request":"get","values":["heartbeatinterval"]}'
+      connection.once 'disconnect', ->
+        self.stop()
+    else
+      tracker.get 'heartbeatinterval', (value)->
+        Heartbeat.intervalMillis = value
+        self.start tracker
     @
 
   stop: ->
-    clearInterval @intervalId
-    delete @intervalId
+    if @intervalId?
+      clearInterval @intervalId
+      delete @intervalId
 
 module.exports = Heartbeat

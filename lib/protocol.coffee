@@ -22,8 +22,12 @@ class Protocol
   @CONFIG_KEYS = @MUTABLE_CONFIG_KEYS.concat [
     'heartbeatinterval'
     'trackerstate'
-    'framerate', 'frame'
+    'framerate'
     'iscalibrated', 'iscalibrating', 'calibresult'
+    ]
+
+  @PROPERTY_KEYS = @CONFIG_KEYS.concat [
+    'frame'
     ]
 
   @TRACKER_CONNECTED  = 0
