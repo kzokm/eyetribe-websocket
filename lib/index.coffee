@@ -6,7 +6,6 @@ class EyeTribe
     if typeof config == 'function'
       [callback, config] = [config, {}]
     @loopTracker = new @Tracker config
-      .on 'frame', callback
-      .connect()
+      .loop callback
 
 module.exports = EyeTribe

@@ -56,4 +56,8 @@ class Tracker extends EventEmitter
         tracker.emit key, value unless key == 'frame'
       @emit 'frame', @frame if @frame
 
+  loop: (callback)->
+    @on 'frame', callback
+      .connect()
+
 module.exports = Tracker
