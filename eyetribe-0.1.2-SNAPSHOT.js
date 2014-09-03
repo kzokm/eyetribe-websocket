@@ -256,16 +256,18 @@ var Point2D;
 
 Point2D = (function() {
   function Point2D(x, y) {
-    var _ref, _ref1;
-    if (y == null) {
+    var _ref, _ref1, _ref2;
+    if (x && (y == null)) {
       if (x instanceof Array) {
         _ref = x, x = _ref[0], y = _ref[1];
-      } else {
+      } else if (x.x != null) {
         _ref1 = x, x = _ref1.x, y = _ref1.y;
+      } else if (x.left != null) {
+        _ref2 = x, x = _ref2.left, y = _ref2.top;
       }
     }
-    this.x = x;
-    this.y = y;
+    this.x = x || 0;
+    this.y = y || 0;
   }
 
   Point2D.prototype.add = function(p2) {
@@ -276,12 +278,16 @@ Point2D = (function() {
     return new Point2D(this.x - p2.x, this.y - p2.y);
   };
 
-  Point2D.prototype.multiply = function(value) {
-    return new Point2D(this.x * value, this.y * value);
+  Point2D.prototype.multiply = function(k) {
+    return new Point2D(this.x * k, this.y * k);
   };
 
-  Point2D.prototype.divide = function(value) {
-    return new Point2D(this.x / value, this.y / value);
+  Point2D.prototype.divide = function(k) {
+    return new Point2D(this.x / k, this.y / k);
+  };
+
+  Point2D.prototype.average = function() {
+    return (this.x + this.y) / 2;
   };
 
   return Point2D;

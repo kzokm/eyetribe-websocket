@@ -1,12 +1,14 @@
 class Point2D
   constructor: (x, y)->
-    unless y?
+    if x && !y?
       if x instanceof Array
         [x, y] = x
-      else
+      else if x.x?
         {x, y} = x
-    @x = x
-    @y = y
+      else if x.left?
+        {left: x, top: y} = x
+    @x = x || 0
+    @y = y || 0
 
   add: (p2)->
     new Point2D(@x + p2.x, @y + p2.y)
@@ -14,10 +16,13 @@ class Point2D
   subtract: (p2)->
     new Point2D(@x - p2.x, @y - p2.y)
 
-  multiply: (value)->
-    new Point2D(@x * value, @y * value)
+  multiply: (k)->
+    new Point2D(@x * k, @y * k)
 
-  divide: (value)->
-    new Point2D(@x / value, @y / value)
+  divide: (k)->
+    new Point2D(@x / k, @y / k)
+
+  average: ->
+    (@x + @y) / 2
 
 module.exports = Point2D
