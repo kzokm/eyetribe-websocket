@@ -484,10 +484,10 @@ module.exports = Tracker;
 
 },{"./connection":1,"./gazedata":2,"./heartbeat":3,"./protocol":6,"events":9,"underscore":10}],8:[function(require,module,exports){
 module.exports = {
-  full: '0.1.1',
+  full: '0.1.2-SNAPSHOT',
   major: 0,
   minor: 1,
-  dot: 1
+  dot: 2
 };
 
 
