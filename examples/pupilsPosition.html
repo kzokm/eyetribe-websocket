@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+
+<meta charset="utf-8">
+<title>Show pupils position</title>
+<script src="http://localhost:6556/eyetribe.js"></script>
+
+<img id="leftEye" class="eye" src="eye.png">
+<img id="rightEye" class="eye" src="eye.png">
+<div id="dump"></div>
+
+<style>
+  body {
+    color: #fff;
+    background-color: #000;
+  }
+  #dump {
+    color: #777;
+  }
+  .eye {
+    position: absolute;
+    width: 100px;
+    height: 60px;
+  }
+</style>
+
+<script>
+(function() {
+  var leftEye = document.getElementById('leftEye');
+  var rightEye = document.getElementById('rightEye');
+
+  var dump = document.getElementById('dump');
+
+  EyeTribe.loop(function(frame) {
+    var html = 'Frame: <ul>';
+    html += '<li>Status: ' + frame.state + '</li>';
+    html += '<li>Timestamp: ' + frame.timestampString + '</li>';
+    html += '<li>Is fixated: ' + frame.isFixated + '</li>';
+    html += position2html(frame.raw, 'Raw position');
+    html += position2html(frame.average, 'Average position');
+    html += eye2html(frame.leftEye, 'Left eye');
+    html += eye2html(frame.rightEye, 'Right eye');
+    html += '</ul>';
+    dump.innerHTML = html;
+
+    locateEyeImage(leftEye, frame.leftEye);
+    locateEyeImage(rightEye, frame.rightEye);
+  })
+
+  function eye2html(eye, label) {
+    return '<li>' + label + ':<ul>'
+      + position2html(eye.raw, 'Raw position')
+      + position2html(eye.average, 'Average position')
+      + '<li>Pupil size: ' + eye.pupilSize + '</li>'
+      + position2html(eye.pupilCenter, 'Pupil center position')
+      + '</ul></li>'
+  }
+
+  function position2html(position, label) {
+    return '<li>' + label + ': ' + position.x + ', ' + position.y + '</li>';
+  }
+
+
+  var body = document.body;
+
+  function locateEyeImage(image, eye) {
+    if (eye.pupilSize) {
+      image.style.display = 'block';
+      image.style.left = (eye.pupilCenter.x * (body.clientWidth - image.width) + (image.width / 2)) + 'px';
+      image.style.top = (eye.pupilCenter.y * (body.clientHeight - image.height) + (image.height / 2)) + 'px';
+    } else {
+      image.style.display = 'none';
+    }
+  }
+})();
+</script>

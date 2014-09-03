@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+
+<meta charset="utf-8">
+<title>Show looking position</title>
+<script src="http://localhost:6556/eyetribe.js"></script>
+
+<img id="leftEye" class="eye" src="eye.png">
+<img id="rightEye" class="eye" src="eye.png">
+<div id="cursor"></div>
+<div id="dump"></div>
+
+<style>
+  body {
+    color: #fff;
+    background-color: #000;
+  }
+  #dump {
+    color: #777;
+  }
+  .eye {
+    position: absolute;
+    width: 100px;
+    height: 60px;
+  }
+  #cursor {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border: solid 1px #f00
+  }
+</style>
+
+<script>
+(function() {
+  var leftEye = document.getElementById('leftEye');
+  var rightEye = document.getElementById('rightEye');
+  var cursor = document.getElementById('cursor');
+
+  var dump = document.getElementById('dump');
+
+  EyeTribe.loop(function(frame) {
+    var html = 'Frame: <ul>';
+    html += '<li>Status: ' + frame.state + '</li>';
+    html += '<li>Timestamp: ' + frame.timestampString + '</li>';
+    html += '<li>Is fixated: ' + frame.isFixated + '</li>';
+    html += position2html(frame.raw, 'Raw position');
+    html += position2html(frame.average, 'Average position');
+    html += eye2html(frame.leftEye, 'Left eye');
+    html += eye2html(frame.rightEye, 'Right eye');
+    html += '</ul>';
+    dump.innerHTML = html;
+
+    locateEyeImage(leftEye, frame.leftEye);
+    locateEyeImage(rightEye, frame.rightEye);
+    locateCursor(frame);
+  })
+
+  function eye2html(eye, label) {
+    return '<li>' + label + ':<ul>'
+      + position2html(eye.raw, 'Raw position')
+      + position2html(eye.average, 'Average position')
+      + '<li>Pupil size: ' + eye.pupilSize + '</li>'
+      + position2html(eye.pupilCenter, 'Pupil center position')
+      + '</ul></li>'
+  }
+
+  function position2html(position, label) {
+    return '<li>' + label + ': ' + position.x + ', ' + position.y + '</li>';
+  }
+
+
+  var clientOrigin = {
+    left: window.screenLeft,
+    top: window.screenTop
+  }
+
+  document.onmousemove = function(event) {
+    clientOrigin.left = event.screenX - event.clientX
+    clientOrigin.top = event.screenY - event.clientY
+  }
+
+  function locateEyeImage(image, eye) {
+    if (eye.pupilSize) {
+      locateElement(image, eye.average);
+    } else {
+      image.style.display = 'none';
+    }
+  }
+
+  function locateCursor(frame) {
+    if (frame.isFixated) {
+      locateElement(cursor, frame.average)
+    } else {
+      cursor.style.display = 'none';
+    }
+  }
+
+  function locateElement(element, position) {
+    element.style.display = 'block';
+    element.style.left = (position.x - clientOrigin.left - element.clientWidth / 2) + 'px';
+    element.style.top = (position.y - clientOrigin.top - element.clientHeight / 2) + 'px';
+  }
+
+})();
+</script>
