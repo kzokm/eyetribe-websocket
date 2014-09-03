@@ -1,4 +1,3 @@
-_ = require 'underscore'
 Point2D = require './point2d'
 
 class Frame
@@ -8,9 +7,7 @@ class Frame
   @STATE_TRACKING_FAIL = 1 << 3
   @STATE_TRACKING_LOST = 1 << 4
 
-  constructor: (data)->
-    @data = data
-
+  constructor: (@data)->
     @timestampString = data.timestamp
     @timestamp = data.time
     @state = data.state
@@ -29,10 +26,7 @@ class Eye
   @LEFT = 0
   @RIGHT = 1
 
-  constructor: (type, data)->
-    @type = type
-    @data = data
-
+  constructor: (@type, @data)->
     @raw = @rawCoordinates = new Point2D(data.raw)
     @avg = @smoothedCoordinates = new Point2D(data.avg)
     @pupilCenter = @pupilCenterCoordinates = new Point2D(data.pcenter)
