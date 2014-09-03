@@ -101,12 +101,10 @@ Connection = (function(_super) {
 module.exports = Connection;
 
 
-},{"events":9,"underscore":10}],2:[function(require,module,exports){
-var Eye, Frame, GazeData, Point2D, _,
+},{"events":10,"underscore":11}],2:[function(require,module,exports){
+var Eye, Frame, GazeData, Point2D,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-_ = require('underscore');
 
 Point2D = require('./point2d');
 
@@ -127,7 +125,7 @@ Frame = (function() {
     this.timestamp = data.time;
     this.state = data.state;
     this.raw = this.rawCoordinates = new Point2D(data.raw);
-    this.avg = this.smoothedCoordinates = new Point2D(data.avg);
+    this.average = this.smoothedCoordinates = new Point2D(data.avg);
     this.leftEye = new Eye(Eye.LEFT, data.lefteye);
     this.rightEye = new Eye(Eye.RIGHT, data.righteye);
     this.eyes = [this.leftEye, this.rightEye];
@@ -147,7 +145,7 @@ Eye = (function() {
     this.type = type;
     this.data = data;
     this.raw = this.rawCoordinates = new Point2D(data.raw);
-    this.avg = this.smoothedCoordinates = new Point2D(data.avg);
+    this.average = this.smoothedCoordinates = new Point2D(data.avg);
     this.pupilCenter = this.pupilCenterCoordinates = new Point2D(data.pcenter);
     this.pupilSize = data.psize;
   }
@@ -172,7 +170,93 @@ GazeData = (function(_super) {
 module.exports = GazeData;
 
 
-},{"./point2d":5,"underscore":10}],3:[function(require,module,exports){
+},{"./point2d":6}],3:[function(require,module,exports){
+var Eye, GazeData, GazeUtils, Point2D;
+
+GazeData = require('./gazedata');
+
+Eye = GazeData.Eye;
+
+Point2D = require('./point2d');
+
+GazeUtils = (function() {
+  var maxinumEyesDistance, minimamEyesDistance;
+
+  function GazeUtils() {}
+
+  GazeUtils.getEyesCenterNormalized = function(leftEye, rightEye) {
+    var _ref;
+    if (leftEye instanceof GazeData) {
+      _ref = leftEye, leftEye = _ref.leftEye, rightEye = _ref.rightEye;
+    }
+    if ((leftEye != null) && (rightEye != null)) {
+      return leftEye.pupilCenter.add(rightEye.pupilCenter).divide(2);
+    } else if (leftEye != null) {
+      return leftEye.pupilCenter;
+    } else if (rightEye != null) {
+      return rightEye.pupilCenter;
+    }
+  };
+
+  GazeUtils.getEyesCenterPixels = function(leftEye, rightEye, screenWidth, screenHeight) {
+    var center;
+    if (leftEye instanceof GazeData) {
+      leftEye = arguments[0], screenWidth = arguments[1], screenHeight = arguments[2];
+    }
+    center = this.getEyesCenterNormalized(leftEye, rightEye);
+    return this.getRelativeToScreenSpace(center, screenWidth, screenHeight);
+  };
+
+  minimamEyesDistance = 0.1;
+
+  maxinumEyesDistance = 0.3;
+
+  GazeUtils.getEyesDistanceNormalized = function(leftEye, rightEye) {
+    var dist, _ref;
+    if (leftEye instanceof GazeData) {
+      _ref = leftEye, leftEye = _ref.leftEye, rightEye = _ref.rightEye;
+    }
+    dist = Math.abs(this.getDistancePoint2D(leftEye.pupilCenter, rightEye.pupilCenter));
+    if (dist < minimamEyesDistance) {
+      minimamEyesDistance = dist;
+    }
+    if (dist > maxinumEyesDistance) {
+      maxinumEyesDistance = dist;
+    }
+    return dist / (maxinumEyesDistance - minimamEyesDistance);
+  };
+
+  GazeUtils.getDistancePoint2D = function(p1, p2) {
+    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+  };
+
+  GazeUtils.getRelativeToScreenSpace = function(point, screenWidth, screenHeight) {
+    if (point != null) {
+      return new Point2D(Math.round(point.x * screenWidth), Math.round(point.y * screenHeight));
+    }
+  };
+
+  GazeUtils.getNormalizedCoords = function(point, screenWidth, screenHeight) {
+    if (point != null) {
+      return new Point2D(point.x / screenWidth, point.y / screenHeight);
+    }
+  };
+
+  GazeUtils.getNormalizedMapping = function(point, screenWidth, screenHeight) {
+    point = this.getNormalizedCoords(point, screenHeight, screenHeight);
+    if (point != null) {
+      return new Point2D(point.x * 2 - 1, point.y * 2 - 1);
+    }
+  };
+
+  return GazeUtils;
+
+})();
+
+module.exports = GazeUtils;
+
+
+},{"./gazedata":2,"./point2d":6}],4:[function(require,module,exports){
 var Heartbeat;
 
 Heartbeat = (function() {
@@ -218,7 +302,7 @@ Heartbeat = (function() {
 module.exports = Heartbeat;
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var EyeTribe;
 
 EyeTribe = (function() {
@@ -231,6 +315,8 @@ EyeTribe = (function() {
   EyeTribe.Protocol = require('./protocol');
 
   EyeTribe.GazeData = require('./gazedata');
+
+  EyeTribe.GazeUtils = require('./gazeutils');
 
   EyeTribe.Point2D = require('./point2d');
 
@@ -251,21 +337,23 @@ EyeTribe = (function() {
 module.exports = EyeTribe;
 
 
-},{"./gazedata":2,"./point2d":5,"./protocol":6,"./tracker":7,"./version":8,"underscore":10}],5:[function(require,module,exports){
+},{"./gazedata":2,"./gazeutils":3,"./point2d":6,"./protocol":7,"./tracker":8,"./version":9,"underscore":11}],6:[function(require,module,exports){
 var Point2D;
 
 Point2D = (function() {
   function Point2D(x, y) {
-    var _ref, _ref1;
-    if (y == null) {
+    var _ref, _ref1, _ref2;
+    if (x && (y == null)) {
       if (x instanceof Array) {
         _ref = x, x = _ref[0], y = _ref[1];
-      } else {
+      } else if (x.x != null) {
         _ref1 = x, x = _ref1.x, y = _ref1.y;
+      } else if (x.left != null) {
+        _ref2 = x, x = _ref2.left, y = _ref2.top;
       }
     }
-    this.x = x;
-    this.y = y;
+    this.x = x || 0;
+    this.y = y || 0;
   }
 
   Point2D.prototype.add = function(p2) {
@@ -276,12 +364,16 @@ Point2D = (function() {
     return new Point2D(this.x - p2.x, this.y - p2.y);
   };
 
-  Point2D.prototype.multiply = function(value) {
-    return new Point2D(this.x * value, this.y * value);
+  Point2D.prototype.multiply = function(k) {
+    return new Point2D(this.x * k, this.y * k);
   };
 
-  Point2D.prototype.divide = function(value) {
-    return new Point2D(this.x / value, this.y / value);
+  Point2D.prototype.divide = function(k) {
+    return new Point2D(this.x / k, this.y / k);
+  };
+
+  Point2D.prototype.average = function() {
+    return (this.x + this.y) / 2;
   };
 
   return Point2D;
@@ -291,7 +383,7 @@ Point2D = (function() {
 module.exports = Point2D;
 
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var Protocol;
 
 Protocol = (function() {
@@ -350,7 +442,7 @@ Protocol = (function() {
 module.exports = Protocol;
 
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var Connection, EventEmitter, Frame, Heartbeat, Protocol, Tracker, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -482,16 +574,16 @@ Tracker = (function(_super) {
 module.exports = Tracker;
 
 
-},{"./connection":1,"./gazedata":2,"./heartbeat":3,"./protocol":6,"events":9,"underscore":10}],8:[function(require,module,exports){
+},{"./connection":1,"./gazedata":2,"./heartbeat":4,"./protocol":7,"events":10,"underscore":11}],9:[function(require,module,exports){
 module.exports = {
-  full: '0.1.1',
+  full: '0.1.2-SNAPSHOT',
   major: 0,
   minor: 1,
-  dot: 1
+  dot: 2
 };
 
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -796,7 +888,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 //     Underscore.js 1.6.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -2141,8 +2233,8 @@ function isUndefined(arg) {
   }
 }).call(this);
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 window.EyeTribe = require('../lib/index');
 
 
-},{"../lib/index":4}]},{},[11])
+},{"../lib/index":5}]},{},[12])

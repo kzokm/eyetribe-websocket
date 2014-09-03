@@ -3,6 +3,7 @@ class EyeTribe
   @version = require('./version')
   @Protocol = require('./protocol')
   @GazeData = require('./gazedata')
+  @GazeUtils = require('./gazeutils')
   @Point2D = require('./point2d')
   @_ = require('underscore')
 

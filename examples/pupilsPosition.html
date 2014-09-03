@@ -1,22 +1,36 @@
 <!DOCTYPE html>
 
 <meta charset="utf-8">
-<title>Eye Tribe Frame Dumper</title>
+<title>Show pupils position</title>
 <script src="http://localhost:6556/eyetribe.js"></script>
 
-<div id="message">
-  <p><b>Press spacebar to pause.</b></p>
-</div>
+<img id="leftEye" class="eye" src="eye.png">
+<img id="rightEye" class="eye" src="eye.png">
 <div id="dump"></div>
+
+<style>
+  body {
+    color: #fff;
+    background-color: #000;
+  }
+  #dump {
+    color: #777;
+  }
+  .eye {
+    position: absolute;
+    width: 100px;
+    height: 60px;
+  }
+</style>
 
 <script>
 (function() {
+  var leftEye = document.getElementById('leftEye');
+  var rightEye = document.getElementById('rightEye');
+
   var dump = document.getElementById('dump');
 
   EyeTribe.loop(function(frame) {
-    if (paused) return;
-    console.log(this, frame);
-
     var html = 'Frame: <ul>';
     html += '<li>Status: ' + frame.state + '</li>';
     html += '<li>Timestamp: ' + frame.timestampString + '</li>';
@@ -27,12 +41,9 @@
     html += eye2html(frame.rightEye, 'Right eye');
     html += '</ul>';
     dump.innerHTML = html;
-  })
-  .on('connect', function() {
-    console.log('connected:');
-  })
-  .on('disconnect', function(code, reason) {
-    console.log('disconnected:', code, reason);
+
+    locateEyeImage(leftEye, frame.leftEye);
+    locateEyeImage(rightEye, frame.rightEye);
   })
 
   function eye2html(eye, label) {
@@ -49,13 +60,16 @@
   }
 
 
-  var paused = false;
+  var body = document.body;
 
-  window.onkeypress = function(e) {
-    console.log(e);
-    if (e.charCode == 32) { // spacebar
-      paused ^= true;
+  function locateEyeImage(image, eye) {
+    if (eye.pupilSize) {
+      image.style.display = 'block';
+      image.style.left = (eye.pupilCenter.x * (body.clientWidth - image.width) + (image.width / 2)) + 'px';
+      image.style.top = (eye.pupilCenter.y * (body.clientHeight - image.height) + (image.height / 2)) + 'px';
+    } else {
+      image.style.display = 'none';
     }
-  };
+  }
 })();
 </script>
