@@ -13,7 +13,7 @@ class Frame
     @state = data.state
 
     @raw = @rawCoordinates = new Point2D(data.raw)
-    @avg = @smoothedCoordinates = new Point2D(data.avg)
+    @average = @smoothedCoordinates = new Point2D(data.avg)
 
     @leftEye = new Eye(Eye.LEFT, data.lefteye)
     @rightEye = new Eye(Eye.RIGHT, data.righteye)
@@ -28,7 +28,7 @@ class Eye
 
   constructor: (@type, @data)->
     @raw = @rawCoordinates = new Point2D(data.raw)
-    @avg = @smoothedCoordinates = new Point2D(data.avg)
+    @average = @smoothedCoordinates = new Point2D(data.avg)
     @pupilCenter = @pupilCenterCoordinates = new Point2D(data.pcenter)
     @pupilSize = data.psize
 

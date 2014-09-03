@@ -125,7 +125,7 @@ Frame = (function() {
     this.timestamp = data.time;
     this.state = data.state;
     this.raw = this.rawCoordinates = new Point2D(data.raw);
-    this.avg = this.smoothedCoordinates = new Point2D(data.avg);
+    this.average = this.smoothedCoordinates = new Point2D(data.avg);
     this.leftEye = new Eye(Eye.LEFT, data.lefteye);
     this.rightEye = new Eye(Eye.RIGHT, data.righteye);
     this.eyes = [this.leftEye, this.rightEye];
@@ -145,7 +145,7 @@ Eye = (function() {
     this.type = type;
     this.data = data;
     this.raw = this.rawCoordinates = new Point2D(data.raw);
-    this.avg = this.smoothedCoordinates = new Point2D(data.avg);
+    this.average = this.smoothedCoordinates = new Point2D(data.avg);
     this.pupilCenter = this.pupilCenterCoordinates = new Point2D(data.pcenter);
     this.pupilSize = data.psize;
   }
