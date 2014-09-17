@@ -1,6 +1,6 @@
 class Point2D
   constructor: (x, y)->
-    if x && !y?
+    if x? && !y?
       if x instanceof Array
         [x, y] = x
       else if x.x?
@@ -24,5 +24,8 @@ class Point2D
 
   average: ->
     (@x + @y) / 2
+
+  toString: ->
+    "#{@x}, #{@y}"
 
 module.exports = Point2D

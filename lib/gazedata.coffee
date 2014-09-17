@@ -21,6 +21,20 @@ class Frame
 
     @isFixated = data.fix
 
+  dump: ->
+    'Gaze Data:<br>' +
+    'Frame [ state:' + @state +
+    ' | timestamp:' + @timestamp +
+    ' | fixated:' + @isFixated +
+    ' | raw:' + @raw.toString() +
+    ' | average:' + @average.toString() +
+    ' ]' +
+    '<br><br>Eyes:' +
+    '<br>' + @leftEye.dump() +
+    '<br>' + @rightEye.dump() +
+    '<br><br>Raw JSON: ' + (JSON.stringify @data) +
+    '<br>'
+
 
 class Eye
   @LEFT = 0
@@ -32,6 +46,17 @@ class Eye
     @pupilCenter = @pupilCenterCoordinates = new Point2D(data.pcenter)
     @pupilSize = data.psize
 
+  dump: ->
+    type = switch @type
+      when Eye.LEFT then 'left'
+      when Eye.RIGHT then 'right'
+
+    "Eye(#{type}) [ " +
+    'raw:' + @raw.toString() +
+    ' | average:' + @average.toString() +
+    ' | pupilSize:' + @pupilSize +
+    ' | pupilCenter:' + @pupilCenter.toString() +
+    ' ]'
 
 class GazeData extends Frame
   @Eye = Eye
