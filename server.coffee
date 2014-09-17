@@ -17,9 +17,9 @@ server = http.createServer()
     console.log 'LISTEN: ' + SERVER_PORT
   .on 'request', (request, response)->
     if request.url == '/eyetribe.js'
-      code = readScript "./eyetribe-#{version}.js"
+      code = readScript "#{__dirname}/eyetribe-#{version}.js"
     else if request.url == '/eyetribe.min.js'
-      code = readScript "./eyetribe-#{version}.min.js"
+      code = readScript "#{__dirname}/eyetribe-#{version}.min.js"
     if code
       response.writeHead 200,
         'Content-Type': 'text/javascript; charset: UTF-8'
