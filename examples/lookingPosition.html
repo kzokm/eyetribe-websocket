@@ -39,34 +39,12 @@
   var dump = document.getElementById('dump');
 
   EyeTribe.loop(function(frame) {
-    var html = 'Frame: <ul>';
-    html += '<li>Status: ' + frame.state + '</li>';
-    html += '<li>Timestamp: ' + frame.timestampString + '</li>';
-    html += '<li>Is fixated: ' + frame.isFixated + '</li>';
-    html += position2html(frame.raw, 'Raw position');
-    html += position2html(frame.average, 'Average position');
-    html += eye2html(frame.leftEye, 'Left eye');
-    html += eye2html(frame.rightEye, 'Right eye');
-    html += '</ul>';
-    dump.innerHTML = html;
+    dump.innerHTML = frame.dump();
 
     locateEyeImage(leftEye, frame.leftEye);
     locateEyeImage(rightEye, frame.rightEye);
     locateCursor(frame);
   })
-
-  function eye2html(eye, label) {
-    return '<li>' + label + ':<ul>'
-      + position2html(eye.raw, 'Raw position')
-      + position2html(eye.average, 'Average position')
-      + '<li>Pupil size: ' + eye.pupilSize + '</li>'
-      + position2html(eye.pupilCenter, 'Pupil center position')
-      + '</ul></li>'
-  }
-
-  function position2html(position, label) {
-    return '<li>' + label + ': ' + position.x + ', ' + position.y + '</li>';
-  }
 
 
   var clientOrigin = {

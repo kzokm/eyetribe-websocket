@@ -132,6 +132,10 @@ Frame = (function() {
     this.isFixated = data.fix;
   }
 
+  Frame.prototype.dump = function() {
+    return 'Gaze Data:<br>' + 'Frame [ state:' + this.state + ' | timestamp:' + this.timestamp + ' | fixated:' + this.isFixated + ' | raw:' + this.raw.toString() + ' | average:' + this.average.toString() + ' ]' + '<br><br>Eyes:' + '<br>' + this.leftEye.dump() + '<br>' + this.rightEye.dump() + '<br><br>Raw JSON: ' + (JSON.stringify(this.data)) + '<br>';
+  };
+
   return Frame;
 
 })();
@@ -149,6 +153,19 @@ Eye = (function() {
     this.pupilCenter = this.pupilCenterCoordinates = new Point2D(data.pcenter);
     this.pupilSize = data.psize;
   }
+
+  Eye.prototype.dump = function() {
+    var type;
+    type = (function() {
+      switch (this.type) {
+        case Eye.LEFT:
+          return 'left';
+        case Eye.RIGHT:
+          return 'right';
+      }
+    }).call(this);
+    return ("Eye(" + type + ") [ ") + 'raw:' + this.raw.toString() + ' | average:' + this.average.toString() + ' | pupilSize:' + this.pupilSize + ' | pupilCenter:' + this.pupilCenter.toString() + ' ]';
+  };
 
   return Eye;
 
@@ -343,7 +360,7 @@ var Point2D;
 Point2D = (function() {
   function Point2D(x, y) {
     var _ref, _ref1, _ref2;
-    if (x && (y == null)) {
+    if ((x != null) && (y == null)) {
       if (x instanceof Array) {
         _ref = x, x = _ref[0], y = _ref[1];
       } else if (x.x != null) {
@@ -374,6 +391,10 @@ Point2D = (function() {
 
   Point2D.prototype.average = function() {
     return (this.x + this.y) / 2;
+  };
+
+  Point2D.prototype.toString = function() {
+    return "" + this.x + ", " + this.y;
   };
 
   return Point2D;
@@ -576,10 +597,10 @@ module.exports = Tracker;
 
 },{"./connection":1,"./gazedata":2,"./heartbeat":4,"./protocol":7,"events":10,"underscore":11}],9:[function(require,module,exports){
 module.exports = {
-  full: '0.1.2',
+  full: '0.1.3-SNAPSHOT',
   major: 0,
   minor: 1,
-  dot: 2
+  dot: 3
 };
 
 
