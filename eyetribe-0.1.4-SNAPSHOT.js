@@ -597,10 +597,10 @@ module.exports = Tracker;
 
 },{"./connection":1,"./gazedata":2,"./heartbeat":4,"./protocol":7,"events":10,"underscore":11}],9:[function(require,module,exports){
 module.exports = {
-  full: '0.1.3',
+  full: '0.1.4-SNAPSHOT',
   major: 0,
   minor: 1,
-  dot: 3
+  dot: 4
 };
 
 
