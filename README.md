@@ -1,7 +1,6 @@
 # WebSocket proxy and javascript API for The Eye Tribe Tracker
 
 ## Run
-
 1. `npm install`
 2. `coffee server.coffee`
 
@@ -16,10 +15,9 @@
 ```
 
 ## Requirements
-
-* The Eye Tribe
-* The Eye Tribe SDK
-* Node.js 0.10 or later
+* [The Eye Tribe](https://theeyetribe.com/products/)
+* [The Eye Tribe SDK](http://dev.theeyetribe.com/general/)
+* [Node.js](http://nodejs.org/) 0.10 or later
 
 ## License
 
