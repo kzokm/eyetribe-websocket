@@ -1,5 +1,4 @@
 #!env coffee
-require 'coffee-script/register'
 {full: version} = require './lib/version'
 
 net = require 'net'

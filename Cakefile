@@ -1,7 +1,6 @@
 # -*- mode: coffee -*-
 # vi: set ft=coffee :
 
-require 'coffee-script/register'
 {full: version} = require './lib/version'
 
 TARGET = "eyetribe-#{version}.js"
