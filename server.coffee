@@ -1,4 +1,13 @@
 #!env coffee
+#
+# WebSocket proxy for The Eye Tribe Tracker
+# https://github.com/kzokm/eyetribe-websocket/
+#
+# Copyright (c) 2014 OKAMURA Kazuhide
+#
+# This software is released under the MIT License.
+# http://opensource.org/licenses/mit-license.php
+#
 {full: version} = require './lib/version'
 
 net = require 'net'
