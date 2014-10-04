@@ -1,4 +1,4 @@
-# WebSocket proxy and javascript API for The Eye Tribe Tracker
+# WebSocket proxy and JavaScript API for The Eye Tribe Tracker
 
 ## Run
 1. `npm install`
@@ -15,7 +15,7 @@
 ```
 
 ## Requirements
-* [The Eye Tribe](https://theeyetribe.com/products/)
+* [The Eye Tribe Tracker](https://theeyetribe.com/products/)
 * [The Eye Tribe SDK](http://dev.theeyetribe.com/general/)
 * [Node.js](http://nodejs.org/) 0.10 or later
 
