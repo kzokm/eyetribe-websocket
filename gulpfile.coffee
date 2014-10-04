@@ -16,9 +16,11 @@ gulp.task 'browserify', ->
     extensions: ['.coffee']
     debug: true
   .transform 'coffeeify'
-  .bundle()
+  .bundle (error)->
+    console.error error if error
   .pipe source TARGET + '.js'
   .pipe gulp.dest '.'
+  @
 
 gulp.task 'compress', ['browserify'], ->
   gulp.src TARGET + '.js'
@@ -29,7 +31,6 @@ gulp.task 'compress', ['browserify'], ->
 
 gulp.task 'watch', ['compress'], ->
   gulp.watch 'lib/*.coffee', ['compress']
-
 
 gulp.task 'server', ['watch'], ->
   require './server'
