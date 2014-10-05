@@ -49,30 +49,31 @@ readFile = (file) ->
       .toString()
 
 ws.attach server
-  .on 'connection', (sock)->
+  .on 'connection', (client)->
     console.log 'CONNECTED: WS'
 
-    sock
+    client
       .on 'message', (data)->
         console.log 'REQUEST: ' + data
-        target.write data
+        tracker.write data
       .on 'close', (data)->
         console.log 'DISCONNECTED: WS'
-        target.end()
+        tracker.end()
       .on 'error', (error)->
         console.error 'ERROR: WS: ' + error
 
-    target = new net.Socket()
+    tracker = new net.Socket()
       .on 'data', (data)->
         #console.log 'RESPONSE: ' + data
         try
-          sock.write data
+          client.write data
         catch e
           console.error 'ERROR: WS: ' + e
       .on 'close', (data)->
         console.log 'CLOSED: TRACKER SERVER'
-        sock.end()
+        client.end()
       .on 'error', (error)->
         console.error 'ERROR: TRACKER SERVER: ' + error
       .connect TRACKER_PORT, TRACKER_HOST, ->
         console.log 'OPENED: TRACKER SERVER'
+        client.write 'OK'

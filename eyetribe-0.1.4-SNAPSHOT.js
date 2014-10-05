@@ -1,11 +1,13 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var Connection, EventEmitter, _,
+var Connection, EventEmitter, WS_CLOSE_NORMAL, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _ = require('underscore');
 
 EventEmitter = require('events').EventEmitter;
+
+WS_CLOSE_NORMAL = 1000;
 
 Connection = (function(_super) {
   var defaultConfig, handleClose, handleOpen, handleResponse;
@@ -35,14 +37,16 @@ Connection = (function(_super) {
     if (!this.socket) {
       connection = this;
       this.socket = new WebSocket("ws://" + this.host + ":" + this.port);
-      this.socket.onopen = function() {
-        return handleOpen.call(connection);
-      };
+      this.socket.onopen = function() {};
       this.socket.onclose = function(data) {
         return handleClose.call(connection, data.code, data.reason);
       };
       this.socket.onmessage = function(message) {
-        return handleResponse.call(connection, message.data);
+        if (message.data === 'OK') {
+          return handleOpen.call(connection);
+        } else {
+          return handleResponse.call(connection, message.data);
+        }
       };
       this.socket.onerror = function(error) {
         return console.log('onerror', error);
@@ -53,24 +57,18 @@ Connection = (function(_super) {
 
   handleOpen = function() {
     this.stopReconnection();
-    if (!this.connected) {
-      this.connected = true;
-      return this.emit('connect');
-    }
+    this.connected = true;
+    return this.emit('connect');
   };
 
   handleClose = function(code, reason) {
     delete this.socket;
     if (this.connected) {
-      this.disconnect();
+      this.connected = false;
       this.emit('disconnect', code, reason);
-      if (this.allowReconnect) {
-        return this.reconnect(this.reconnectionInterval);
-      }
-    } else if (this.reconnecting) {
+    }
+    if (code !== WS_CLOSE_NORMAL && this.allowReconnect) {
       return this.reconnect(this.reconnectionInterval);
-    } else {
-      return this.emit('disconnect', code, reason);
     }
   };
 
@@ -93,8 +91,7 @@ Connection = (function(_super) {
   Connection.prototype.disconnect = function() {
     var _ref;
     this.stopReconnection();
-    this.connected = false;
-    return (_ref = this.socket) != null ? _ref.close() : void 0;
+    return (_ref = this.socket) != null ? _ref.close(WS_CLOSE_NORMAL) : void 0;
   };
 
   Connection.prototype.reconnect = function(intervalMillis) {
@@ -304,34 +301,40 @@ module.exports = GazeUtils;
 var Heartbeat;
 
 Heartbeat = (function() {
-  function Heartbeat() {}
+  function Heartbeat(tracker) {
+    var heartbeat;
+    this.tracker = tracker;
+    heartbeat = this;
+    tracker.on('heartbeatinterval', function(intervalMillis) {
+      return heartbeat.restart(intervalMillis);
+    });
+  }
 
-  Heartbeat.intervalMillis = void 0;
-
-  Heartbeat.start = function(tracker) {
-    return new Heartbeat().start(tracker);
-  };
-
-  Heartbeat.prototype.start = function(tracker) {
-    var connection, self;
-    self = this;
-    connection = tracker.connection;
-    if (Heartbeat.intervalMillis != null) {
+  Heartbeat.prototype.start = function(intervalMillis) {
+    var connection, heartbeat;
+    this.intervalMillis = intervalMillis;
+    heartbeat = this;
+    connection = this.tracker.connection;
+    if (intervalMillis != null) {
       if (this.intervalId == null) {
         this.intervalId = setInterval(function() {
           return connection.send('{"category":"heartbeat"}');
-        }, Heartbeat.intervalMillis);
+        }, intervalMillis);
       }
       connection.once('disconnect', function() {
-        return self.stop();
+        return heartbeat.stop();
       });
     } else {
-      tracker.get('heartbeatinterval', function(value) {
-        Heartbeat.intervalMillis = value;
-        return self.start(tracker);
-      });
+      this.tracker.get('heartbeatinterval');
     }
     return this;
+  };
+
+  Heartbeat.prototype.restart = function(intervalMillis) {
+    if (this.intervalMillis !== intervalMillis) {
+      this.stop();
+    }
+    return this.start(intervalMillis);
   };
 
   Heartbeat.prototype.stop = function() {
@@ -507,7 +510,7 @@ Frame = require('./gazedata');
 EventEmitter = require('events').EventEmitter;
 
 Tracker = (function(_super) {
-  var defaultConfig, handleData;
+  var defaultConfig, handleConnect, handleData, handleDisconnect;
 
   __extends(Tracker, _super);
 
@@ -521,6 +524,7 @@ Tracker = (function(_super) {
       config = {};
     }
     this.config = _.defaults(config, defaultConfig);
+    this.heartbeat = new Heartbeat(this);
   }
 
   Tracker.prototype.connect = function(config) {
@@ -529,19 +533,30 @@ Tracker = (function(_super) {
       config = this.config;
     }
     tracker = this;
-    this.connection || (this.connection = new Connection(config).connect().on('tracker', function(data) {
-      return handleData.call(tracker, data);
-    }).on('connect', function(data) {
-      tracker.set(tracker.config);
-      tracker.get(Protocol.CONFIG_KEYS, function(values) {
-        return _.extend(tracker.config, values);
+    if (this.connection == null) {
+      this.connection = new Connection(config).connect().on('tracker', function() {
+        return handleData.apply(tracker, arguments);
+      }).on('connect', function() {
+        return handleConnect.apply(tracker, arguments);
+      }).on('disconnect', function() {
+        return handleDisconnect.apply(tracker, arguments);
       });
-      Heartbeat.start(tracker);
-      return tracker.emit('connect');
-    }).on('disconnect', function(code, reason) {
-      return tracker.emit('disconnect', code, reason);
-    }));
+    }
     return this;
+  };
+
+  handleConnect = function() {
+    this.set(this.config);
+    this.get(Protocol.CONFIG_KEYS, function(values) {
+      return _.extend(this.config, values);
+    });
+    this.heartbeat.start();
+    return this.emit('connect');
+  };
+
+  handleDisconnect = function(code, reason) {
+    this.emit('disconnect', code, reason);
+    return this.removeAllListeners('__values__');
   };
 
   Tracker.prototype.disconnect = function() {
@@ -553,17 +568,18 @@ Tracker = (function(_super) {
   };
 
   handleData = function(data) {
-    var frame, tracker;
-    tracker = this;
+    var frame, key, value, _ref;
     if (data.request === 'get' && (data.values != null)) {
       frame = data.values.frame;
       this.frame = frame ? new Frame(frame) : void 0;
-      this.emit('values', data.values);
-      _.each(data.values, function(value, key) {
+      this.emit('__values__', data.values);
+      _ref = data.values;
+      for (key in _ref) {
+        value = _ref[key];
         if (key !== 'frame') {
-          return tracker.emit(key, value);
+          this.emit(key, value);
         }
-      });
+      }
       if (this.frame) {
         return this.emit('frame', this.frame);
       }
@@ -583,18 +599,19 @@ Tracker = (function(_super) {
   Tracker.prototype.get = function(keys, callback) {
     var key, valuesCallback;
     if (_.isString(keys)) {
-      key = keys;
-      (keys = {})[key] = callback;
+      (function(key) {
+        return (keys = {})[key] = callback;
+      })(keys);
       callback = void 0;
     }
     if (_.isArray(keys)) {
       if (callback != null) {
         valuesCallback = function(values) {
           if (callback.call(this, values)) {
-            return this.removeListener('values', valuesCallback);
+            return this.removeListener('__values__', valuesCallback);
           }
         };
-        this.on('values', valuesCallback);
+        this.on('__values__', valuesCallback);
       }
     } else {
       for (key in keys) {

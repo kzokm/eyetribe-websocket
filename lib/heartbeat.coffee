@@ -1,26 +1,28 @@
 class Heartbeat
-  @intervalMillis = undefined
+  constructor: (@tracker)->
+    heartbeat = @
+    tracker.on 'heartbeatinterval', (intervalMillis)->
+      heartbeat.restart intervalMillis
 
-  @start: (tracker)->
-    new Heartbeat()
-      .start tracker
+  start: (@intervalMillis)->
+    heartbeat = @
+    connection = @tracker.connection
 
-  start: (tracker)->
-    self = @
-    connection = tracker.connection
-
-    if Heartbeat.intervalMillis?
+    if intervalMillis?
       @intervalId ?= setInterval ->
         connection.send '{"category":"heartbeat"}'
-      , Heartbeat.intervalMillis
+      , intervalMillis
 
       connection.once 'disconnect', ->
-        self.stop()
+        heartbeat.stop()
     else
-      tracker.get 'heartbeatinterval', (value)->
-        Heartbeat.intervalMillis = value
-        self.start tracker
+      @tracker.get 'heartbeatinterval'
     @
+
+  restart: (intervalMillis)->
+    if @intervalMillis != intervalMillis
+      @stop()
+    @start intervalMillis
 
   stop: ->
     @intervalId = clearInterval @intervalId

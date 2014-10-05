@@ -1,6 +1,8 @@
 _ = require 'underscore'
 {EventEmitter} = require 'events'
 
+WS_CLOSE_NORMAL = 1000
+
 class Connection extends EventEmitter
   defaultConfig =
     host: '$SERVER_HOST'
@@ -20,31 +22,30 @@ class Connection extends EventEmitter
       connection = @
       @socket = new WebSocket "ws://#{@host}:#{@port}"
       @socket.onopen = ()->
-        handleOpen.call connection
+        # nop
       @socket.onclose = (data)->
         handleClose.call connection, data.code, data.reason
       @socket.onmessage = (message)->
-        handleResponse.call connection, message.data
+        if message.data == 'OK'
+          handleOpen.call connection
+        else
+          handleResponse.call connection, message.data
       @socket.onerror = (error)->
         console.log 'onerror', error
     @
 
   handleOpen = ->
     @stopReconnection()
-    unless @connected
-      @connected = true
-      @emit 'connect'
+    @connected = true
+    @emit 'connect'
 
   handleClose = (code, reason)->
     delete @socket
     if @connected
-      @disconnect()
+      @connected = false
       @emit 'disconnect', code, reason
-      @reconnect @reconnectionInterval if @allowReconnect
-    else if @reconnecting
+    if code != WS_CLOSE_NORMAL && @allowReconnect
       @reconnect @reconnectionInterval
-    else
-      @emit 'disconnect', code, reason
 
   handleResponse = (data)->
     for json in data.split "\n"
@@ -54,8 +55,7 @@ class Connection extends EventEmitter
 
   disconnect: ->
     @stopReconnection()
-    @connected = false
-    @socket?.close()
+    @socket?.close WS_CLOSE_NORMAL
 
   reconnect: (intervalMillis = @reconnectionInterval)->
     connection = @
