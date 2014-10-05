@@ -11,16 +11,17 @@ concat = require 'gulp-concat'
 gulp.task 'default', ['compress']
 
 gulp.task 'browserify', ->
-  browserify
+  b = browserify
     entries: ['./template/entry.coffee']
     extensions: ['.coffee']
     debug: true
   .transform 'coffeeify'
   .bundle (error)->
-    console.error error if error
+    if error
+      console.error error
+      b.end()
   .pipe source TARGET + '.js'
   .pipe gulp.dest '.'
-  @
 
 gulp.task 'compress', ['browserify'], ->
   gulp.src TARGET + '.js'
