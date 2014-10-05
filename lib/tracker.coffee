@@ -26,12 +26,12 @@ class Tracker extends EventEmitter
         Heartbeat.start tracker
         tracker.emit 'connect'
       .on 'disconnect', (code, reason)->
-        delete tracker.connection
         tracker.emit 'disconnect', code, reason
     @
 
   disconnect: ->
-    @connection.disconnect()
+    @connection?.disconnect()
+    delete @connection
 
   handleData = (data)->
     tracker = @
@@ -42,7 +42,6 @@ class Tracker extends EventEmitter
       _.each data.values, (value, key)->
         tracker.emit key, value unless key == 'frame'
       @emit 'frame', @frame if @frame
-
 
   set: (values)->
     values = _.pick values, Protocol.MUTABLE_CONFIG_KEYS

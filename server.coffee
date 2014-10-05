@@ -18,8 +18,8 @@ fs = require 'fs'
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 6556
 
-TARGET_HOST = '127.0.0.1'
-TARGET_PORT = 6555
+TRACKER_HOST = '127.0.0.1'
+TRACKER_PORT = 6555
 
 server = http.createServer()
   .listen SERVER_PORT, SERVER_HOST, ->
@@ -74,5 +74,5 @@ ws.attach server
         sock.end()
       .on 'error', (error)->
         console.error 'ERROR: TRACKER SERVER: ' + error
-      .connect TARGET_PORT, TARGET_HOST, ->
+      .connect TRACKER_PORT, TRACKER_HOST, ->
         console.log 'OPENED: TRACKER SERVER'

@@ -14,7 +14,9 @@ Connection = (function(_super) {
 
   defaultConfig = {
     host: '$SERVER_HOST',
-    port: parseInt('$SERVER_PORT')
+    port: parseInt('$SERVER_PORT'),
+    allowReconnect: true,
+    reconnectionInterval: 500
   };
 
   function Connection(config) {
@@ -24,6 +26,8 @@ Connection = (function(_super) {
     config = _.defaults(config, defaultConfig);
     this.host = config.host;
     this.port = config.port;
+    this.allowReconnect = config.allowReconnect;
+    this.reconnectionInterval = config.reconnectionInterval;
   }
 
   Connection.prototype.connect = function() {
@@ -47,23 +51,8 @@ Connection = (function(_super) {
     return this;
   };
 
-  Connection.prototype.disconnect = function() {
-    if (this.socket) {
-      this.socket.close();
-      return delete this.socket;
-    }
-  };
-
-  Connection.prototype.send = function(request) {
-    if (this.socket) {
-      if (request instanceof Object) {
-        request = JSON.stringify(request);
-      }
-      return this.socket.send(request);
-    }
-  };
-
   handleOpen = function() {
+    this.stopReconnection();
     if (!this.connected) {
       this.connected = true;
       return this.emit('connect');
@@ -71,15 +60,22 @@ Connection = (function(_super) {
   };
 
   handleClose = function(code, reason) {
+    delete this.socket;
     if (this.connected) {
-      this.connected = false;
+      this.disconnect();
+      this.emit('disconnect', code, reason);
+      if (this.allowReconnect) {
+        return this.reconnect(this.reconnectionInterval);
+      }
+    } else if (this.reconnecting) {
+      return this.reconnect(this.reconnectionInterval);
+    } else {
       return this.emit('disconnect', code, reason);
     }
   };
 
   handleResponse = function(data) {
-    var connection, json, response, _i, _len, _ref, _results;
-    connection = this;
+    var json, response, _i, _len, _ref, _results;
     _ref = data.split("\n");
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -92,6 +88,37 @@ Connection = (function(_super) {
       }
     }
     return _results;
+  };
+
+  Connection.prototype.disconnect = function() {
+    var _ref;
+    this.stopReconnection();
+    this.connected = false;
+    return (_ref = this.socket) != null ? _ref.close() : void 0;
+  };
+
+  Connection.prototype.reconnect = function(intervalMillis) {
+    var connection;
+    if (intervalMillis == null) {
+      intervalMillis = this.reconnectionInterval;
+    }
+    connection = this;
+    return this.reconnecting = setTimeout(function() {
+      return connection.connect();
+    }, intervalMillis);
+  };
+
+  Connection.prototype.stopReconnection = function() {
+    return this.reconnecting = clearTimeout(this.reconnecting);
+  };
+
+  Connection.prototype.send = function(request) {
+    if (this.socket) {
+      if (request instanceof Object) {
+        request = JSON.stringify(request);
+      }
+      return this.socket.send(request);
+    }
   };
 
   return Connection;
@@ -290,9 +317,11 @@ Heartbeat = (function() {
     self = this;
     connection = tracker.connection;
     if (Heartbeat.intervalMillis != null) {
-      this.intervalId = setInterval(function() {
-        return connection.send('{"category":"heartbeat"}');
-      }, Heartbeat.intervalMillis);
+      if (this.intervalId == null) {
+        this.intervalId = setInterval(function() {
+          return connection.send('{"category":"heartbeat"}');
+        }, Heartbeat.intervalMillis);
+      }
       connection.once('disconnect', function() {
         return self.stop();
       });
@@ -306,10 +335,7 @@ Heartbeat = (function() {
   };
 
   Heartbeat.prototype.stop = function() {
-    if (this.intervalId != null) {
-      clearInterval(this.intervalId);
-      return delete this.intervalId;
-    }
+    return this.intervalId = clearInterval(this.intervalId);
   };
 
   return Heartbeat;
@@ -513,14 +539,17 @@ Tracker = (function(_super) {
       Heartbeat.start(tracker);
       return tracker.emit('connect');
     }).on('disconnect', function(code, reason) {
-      delete tracker.connection;
       return tracker.emit('disconnect', code, reason);
     }));
     return this;
   };
 
   Tracker.prototype.disconnect = function() {
-    return this.connection.disconnect();
+    var _ref;
+    if ((_ref = this.connection) != null) {
+      _ref.disconnect();
+    }
+    return delete this.connection;
   };
 
   handleData = function(data) {

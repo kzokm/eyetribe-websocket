@@ -10,7 +10,7 @@ class Heartbeat
     connection = tracker.connection
 
     if Heartbeat.intervalMillis?
-      @intervalId = setInterval ->
+      @intervalId ?= setInterval ->
         connection.send '{"category":"heartbeat"}'
       , Heartbeat.intervalMillis
 
@@ -23,8 +23,6 @@ class Heartbeat
     @
 
   stop: ->
-    if @intervalId?
-      clearInterval @intervalId
-      delete @intervalId
+    @intervalId = clearInterval @intervalId
 
 module.exports = Heartbeat

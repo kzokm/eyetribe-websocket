@@ -5,11 +5,15 @@ class Connection extends EventEmitter
   defaultConfig =
     host: '$SERVER_HOST'
     port: parseInt '$SERVER_PORT'
+    allowReconnect: true
+    reconnectionInterval: 500
 
   constructor: (config = {})->
     config = _.defaults config, defaultConfig
     @host = config.host
     @port = config.port
+    @allowReconnect = config.allowReconnect
+    @reconnectionInterval = config.reconnectionInterval
 
   connect: ->
     unless @socket
@@ -25,10 +29,42 @@ class Connection extends EventEmitter
         console.log 'onerror', error
     @
 
+  handleOpen = ->
+    @stopReconnection()
+    unless @connected
+      @connected = true
+      @emit 'connect'
+
+  handleClose = (code, reason)->
+    delete @socket
+    if @connected
+      @disconnect()
+      @emit 'disconnect', code, reason
+      @reconnect @reconnectionInterval if @allowReconnect
+    else if @reconnecting
+      @reconnect @reconnectionInterval
+    else
+      @emit 'disconnect', code, reason
+
+  handleResponse = (data)->
+    for json in data.split "\n"
+      if json.length > 0
+        response = JSON.parse json
+        @emit response.category, response
+
   disconnect: ->
-    if @socket
-      @socket.close()
-      delete @socket
+    @stopReconnection()
+    @connected = false
+    @socket?.close()
+
+  reconnect: (intervalMillis = @reconnectionInterval)->
+    connection = @
+    @reconnecting = setTimeout ->
+      connection.connect()
+    , intervalMillis
+
+  stopReconnection: ->
+    @reconnecting = clearTimeout @reconnecting
 
   send: (request)->
     if @socket
@@ -36,21 +72,5 @@ class Connection extends EventEmitter
         request = JSON.stringify request
       @socket.send request
 
-  handleOpen = ->
-    unless @connected
-      @connected = true
-      @emit 'connect'
-
-  handleClose = (code, reason)->
-    if @connected
-      @connected = false
-      @emit 'disconnect', code, reason
-
-  handleResponse = (data)->
-    connection = @
-    for json in data.split "\n"
-      if json.length > 0
-        response = JSON.parse json
-        @emit response.category, response
 
 module.exports = Connection
