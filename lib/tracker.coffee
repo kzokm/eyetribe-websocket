@@ -12,37 +12,44 @@ class Tracker extends EventEmitter
 
   constructor: (config = {})->
     @config = _.defaults config, defaultConfig
+    @heartbeat = new Heartbeat @
 
   connect: (config = @config)->
     tracker = @
-    @connection ||= new Connection config
+    @connection ?= new Connection config
       .connect()
-      .on 'tracker', (data)->
-        handleData.call tracker, data
-      .on 'connect', (data)->
-        tracker.set tracker.config
-        tracker.get Protocol.CONFIG_KEYS, (values)->
-          _.extend tracker.config, values
-        Heartbeat.start tracker
-        tracker.emit 'connect'
-      .on 'disconnect', (code, reason)->
-        delete tracker.connection
-        tracker.emit 'disconnect', code, reason
+      .on 'tracker', ->
+        handleData.apply tracker, arguments
+      .on 'connect', ->
+        handleConnect.apply tracker, arguments
+      .on 'disconnect', ->
+        handleDisconnect.apply tracker, arguments
     @
 
+  handleConnect = ->
+    @set @config
+    @get Protocol.CONFIG_KEYS, (values)->
+      _.extend @config, values
+    @heartbeat.start()
+    @emit 'connect'
+
+  handleDisconnect = (code, reason)->
+    @emit 'disconnect', code, reason
+    @removeAllListeners '__values__'
+
   disconnect: ->
-    @connection.disconnect()
+    @connection?.disconnect()
+    delete @connection
+
 
   handleData = (data)->
-    tracker = @
     if data.request == 'get' && data.values?
       frame = data.values.frame
       @frame = if frame then new Frame(frame) else undefined
-      @emit 'values', data.values
-      _.each data.values, (value, key)->
-        tracker.emit key, value unless key == 'frame'
+      @emit '__values__', data.values
+      for key, value of data.values
+        @emit key, value unless key == 'frame'
       @emit 'frame', @frame if @frame
-
 
   set: (values)->
     values = _.pick values, Protocol.MUTABLE_CONFIG_KEYS
@@ -54,15 +61,15 @@ class Tracker extends EventEmitter
 
   get: (keys, callback)->
     if _.isString keys
-      key = keys
-      (keys = {})[key] = callback
+      do (key = keys)->
+        (keys = {})[key] = callback
       callback = undefined
 
     if _.isArray keys
       if callback?
         valuesCallback = (values)->
-          @removeListener 'values', valuesCallback if callback.call @, values
-        @on 'values', valuesCallback
+          @removeListener '__values__', valuesCallback if callback.call @, values
+        @on '__values__', valuesCallback
     else
       for key, callback of keys
         @once key, callback if callback

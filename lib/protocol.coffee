@@ -1,4 +1,3 @@
-
 class Protocol
   @CATEGORIES = [
     'tracker', 'calibration', 'hertbeat'

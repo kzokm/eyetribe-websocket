@@ -1,6 +1,6 @@
 class EyeTribe
-  @Tracker = require('./tracker')
   @version = require('./version')
+  @Tracker = require('./tracker')
   @Protocol = require('./protocol')
   @GazeData = require('./gazedata')
   @GazeUtils = require('./gazeutils')
