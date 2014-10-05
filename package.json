@@ -1,6 +1,6 @@
 {
   "name": "eye-tribe-websocket",
-  "version": "0.1.4",
+  "version": "0.1.5-SNAMSHOT",
   "description": "WebSocket proxy and JavaScript API for The Eye Tribe Tracker",
   "author": "OKAMURA, Kazuhide <okamura@techlier.jp>",
   "repository": {
