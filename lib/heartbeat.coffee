@@ -1,11 +1,9 @@
 class Heartbeat
   constructor: (@tracker)->
-    heartbeat = @
-    tracker.on 'heartbeatinterval', (intervalMillis)->
-      heartbeat.restart intervalMillis
+    tracker.on 'heartbeatinterval', (intervalMillis)=>
+      @restart intervalMillis
 
   start: (@intervalMillis)->
-    heartbeat = @
     connection = @tracker.connection
 
     if intervalMillis?
@@ -13,8 +11,8 @@ class Heartbeat
         connection.send '{"category":"heartbeat"}'
       , intervalMillis
 
-      connection.once 'disconnect', ->
-        heartbeat.stop()
+      connection.once 'disconnect', =>
+        @stop()
     else
       @tracker.get 'heartbeatinterval'
     @

@@ -19,17 +19,16 @@ class Connection extends EventEmitter
 
   connect: ->
     unless @socket
-      connection = @
       @socket = new WebSocket "ws://#{@host}:#{@port}"
       @socket.onopen = ()->
         # nop
-      @socket.onclose = (data)->
-        handleClose.call connection, data.code, data.reason
-      @socket.onmessage = (message)->
+      @socket.onclose = (data)=>
+        handleClose.call @, data.code, data.reason
+      @socket.onmessage = (message)=>
         if message.data == 'OK'
-          handleOpen.call connection
+          handleOpen.call @
         else
-          handleResponse.call connection, message.data
+          handleResponse.call @, message.data
       @socket.onerror = (error)->
         console.log 'onerror', error
     @
@@ -58,9 +57,8 @@ class Connection extends EventEmitter
     @socket?.close WS_CLOSE_NORMAL
 
   reconnect: (intervalMillis = @reconnectionInterval)->
-    connection = @
-    @reconnecting = setTimeout ->
-      connection.connect()
+    @reconnecting = setTimeout =>
+      @connect()
     , intervalMillis
 
   stopReconnection: ->

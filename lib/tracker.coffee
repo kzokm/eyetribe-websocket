@@ -15,15 +15,14 @@ class Tracker extends EventEmitter
     @heartbeat = new Heartbeat @
 
   connect: (config = @config)->
-    tracker = @
     @connection ?= new Connection config
       .connect()
-      .on 'tracker', ->
-        handleData.apply tracker, arguments
-      .on 'connect', ->
-        handleConnect.apply tracker, arguments
-      .on 'disconnect', ->
-        handleDisconnect.apply tracker, arguments
+      .on 'tracker', =>
+        handleData.apply @, arguments
+      .on 'connect', =>
+        handleConnect.apply @, arguments
+      .on 'disconnect', =>
+        handleDisconnect.apply @, arguments
     @
 
   handleConnect = ->

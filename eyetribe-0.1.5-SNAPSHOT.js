@@ -1,4 +1,9 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+window.EyeTribe = require('../lib/index');
+
+
+
+},{"../lib/index":6}],2:[function(require,module,exports){
 var Connection, EventEmitter, WS_CLOSE_NORMAL, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -33,21 +38,23 @@ Connection = (function(_super) {
   }
 
   Connection.prototype.connect = function() {
-    var connection;
     if (!this.socket) {
-      connection = this;
       this.socket = new WebSocket("ws://" + this.host + ":" + this.port);
       this.socket.onopen = function() {};
-      this.socket.onclose = function(data) {
-        return handleClose.call(connection, data.code, data.reason);
-      };
-      this.socket.onmessage = function(message) {
-        if (message.data === 'OK') {
-          return handleOpen.call(connection);
-        } else {
-          return handleResponse.call(connection, message.data);
-        }
-      };
+      this.socket.onclose = (function(_this) {
+        return function(data) {
+          return handleClose.call(_this, data.code, data.reason);
+        };
+      })(this);
+      this.socket.onmessage = (function(_this) {
+        return function(message) {
+          if (message.data === 'OK') {
+            return handleOpen.call(_this);
+          } else {
+            return handleResponse.call(_this, message.data);
+          }
+        };
+      })(this);
       this.socket.onerror = function(error) {
         return console.log('onerror', error);
       };
@@ -95,14 +102,14 @@ Connection = (function(_super) {
   };
 
   Connection.prototype.reconnect = function(intervalMillis) {
-    var connection;
     if (intervalMillis == null) {
       intervalMillis = this.reconnectionInterval;
     }
-    connection = this;
-    return this.reconnecting = setTimeout(function() {
-      return connection.connect();
-    }, intervalMillis);
+    return this.reconnecting = setTimeout((function(_this) {
+      return function() {
+        return _this.connect();
+      };
+    })(this), intervalMillis);
   };
 
   Connection.prototype.stopReconnection = function() {
@@ -125,7 +132,8 @@ Connection = (function(_super) {
 module.exports = Connection;
 
 
-},{"events":10,"underscore":11}],2:[function(require,module,exports){
+
+},{"events":11,"underscore":12}],3:[function(require,module,exports){
 var Eye, Frame, GazeData, Point2D,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -211,7 +219,8 @@ GazeData = (function(_super) {
 module.exports = GazeData;
 
 
-},{"./point2d":6}],3:[function(require,module,exports){
+
+},{"./point2d":7}],4:[function(require,module,exports){
 var Eye, GazeData, GazeUtils, Point2D;
 
 GazeData = require('./gazedata');
@@ -297,23 +306,23 @@ GazeUtils = (function() {
 module.exports = GazeUtils;
 
 
-},{"./gazedata":2,"./point2d":6}],4:[function(require,module,exports){
+
+},{"./gazedata":3,"./point2d":7}],5:[function(require,module,exports){
 var Heartbeat;
 
 Heartbeat = (function() {
   function Heartbeat(tracker) {
-    var heartbeat;
     this.tracker = tracker;
-    heartbeat = this;
-    tracker.on('heartbeatinterval', function(intervalMillis) {
-      return heartbeat.restart(intervalMillis);
-    });
+    tracker.on('heartbeatinterval', (function(_this) {
+      return function(intervalMillis) {
+        return _this.restart(intervalMillis);
+      };
+    })(this));
   }
 
   Heartbeat.prototype.start = function(intervalMillis) {
-    var connection, heartbeat;
+    var connection;
     this.intervalMillis = intervalMillis;
-    heartbeat = this;
     connection = this.tracker.connection;
     if (intervalMillis != null) {
       if (this.intervalId == null) {
@@ -321,9 +330,11 @@ Heartbeat = (function() {
           return connection.send('{"category":"heartbeat"}');
         }, intervalMillis);
       }
-      connection.once('disconnect', function() {
-        return heartbeat.stop();
-      });
+      connection.once('disconnect', (function(_this) {
+        return function() {
+          return _this.stop();
+        };
+      })(this));
     } else {
       this.tracker.get('heartbeatinterval');
     }
@@ -348,7 +359,8 @@ Heartbeat = (function() {
 module.exports = Heartbeat;
 
 
-},{}],5:[function(require,module,exports){
+
+},{}],6:[function(require,module,exports){
 var EyeTribe;
 
 EyeTribe = (function() {
@@ -383,7 +395,8 @@ EyeTribe = (function() {
 module.exports = EyeTribe;
 
 
-},{"./gazedata":2,"./gazeutils":3,"./point2d":6,"./protocol":7,"./tracker":8,"./version":9,"underscore":11}],6:[function(require,module,exports){
+
+},{"./gazedata":3,"./gazeutils":4,"./point2d":7,"./protocol":8,"./tracker":9,"./version":10,"underscore":12}],7:[function(require,module,exports){
 var Point2D;
 
 Point2D = (function() {
@@ -433,7 +446,8 @@ Point2D = (function() {
 module.exports = Point2D;
 
 
-},{}],7:[function(require,module,exports){
+
+},{}],8:[function(require,module,exports){
 var Protocol;
 
 Protocol = (function() {
@@ -492,7 +506,8 @@ Protocol = (function() {
 module.exports = Protocol;
 
 
-},{}],8:[function(require,module,exports){
+
+},{}],9:[function(require,module,exports){
 var Connection, EventEmitter, Frame, Heartbeat, Protocol, Tracker, _,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -528,19 +543,23 @@ Tracker = (function(_super) {
   }
 
   Tracker.prototype.connect = function(config) {
-    var tracker;
     if (config == null) {
       config = this.config;
     }
-    tracker = this;
     if (this.connection == null) {
-      this.connection = new Connection(config).connect().on('tracker', function() {
-        return handleData.apply(tracker, arguments);
-      }).on('connect', function() {
-        return handleConnect.apply(tracker, arguments);
-      }).on('disconnect', function() {
-        return handleDisconnect.apply(tracker, arguments);
-      });
+      this.connection = new Connection(config).connect().on('tracker', (function(_this) {
+        return function() {
+          return handleData.apply(_this, arguments);
+        };
+      })(this)).on('connect', (function(_this) {
+        return function() {
+          return handleConnect.apply(_this, arguments);
+        };
+      })(this)).on('disconnect', (function(_this) {
+        return function() {
+          return handleDisconnect.apply(_this, arguments);
+        };
+      })(this));
     }
     return this;
   };
@@ -641,7 +660,8 @@ Tracker = (function(_super) {
 module.exports = Tracker;
 
 
-},{"./connection":1,"./gazedata":2,"./heartbeat":4,"./protocol":7,"events":10,"underscore":11}],9:[function(require,module,exports){
+
+},{"./connection":2,"./gazedata":3,"./heartbeat":5,"./protocol":8,"events":11,"underscore":12}],10:[function(require,module,exports){
 module.exports = {
   full: '0.1.5-SNAPSHOT',
   major: 0,
@@ -650,7 +670,8 @@ module.exports = {
 };
 
 
-},{}],10:[function(require,module,exports){
+
+},{}],11:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -953,7 +974,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 //     Underscore.js 1.7.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -2370,8 +2391,7 @@ function isUndefined(arg) {
   }
 }.call(this));
 
-},{}],12:[function(require,module,exports){
-window.EyeTribe = require('../lib/index');
+},{}]},{},[1])
 
 
-},{"../lib/index":5}]},{},[12])
+//# sourceMappingURL=eyetribe-0.1.5-SNAPSHOT.js.map
