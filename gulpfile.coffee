@@ -1,37 +1,47 @@
+APINAME = 'eyetribe'
+
 {full: version} = require './lib/version'
-TARGET = "eyetribe-#{version}"
-isDevelopment = version.indexOf 'SNAPSHOT' > 0
+BASENAME = "#{APINAME}-#{version}"
+isDevelopment = version.indexOf('SNAPSHOT') > 0
 
 gulp = require 'gulp'
-browserify = require 'browserify'
-uglify = require 'gulp-uglify'
-source = require 'vinyl-source-stream'
-concat = require 'gulp-concat'
+util = require 'gulp-util'
 
 gulp.task 'default', ['compress']
 
+
+browserify = require 'browserify'
+exorcist = require 'exorcist'
+fs = require 'fs'
+
 gulp.task 'browserify', ->
   browserify
-    entries: ['./template/entry.coffee']
     extensions: ['.coffee']
-    debug: true
+    debug: isDevelopment
+  .add './template/entry.coffee'
   .transform 'coffeeify'
   .bundle (error)->
     if error
-      console.error error
-      @end()
-  .pipe source TARGET + '.js'
-  .pipe gulp.dest '.'
+      util.log error
+      @emit 'end'
+  .pipe exorcist "#{BASENAME}.js.map"
+  .pipe fs.createWriteStream "#{BASENAME}.js"
+
+
+uglify = require 'gulp-uglify'
+concat = require 'gulp-concat'
 
 gulp.task 'compress', ['browserify'], ->
-  gulp.src TARGET + '.js'
+  gulp.src "#{BASENAME}.js"
   .pipe uglify
     outSourceMap: true
-  .pipe concat TARGET + '.min.js'
+  .pipe concat "#{BASENAME}.min.js"
   .pipe gulp.dest '.'
+
 
 gulp.task 'watch', ['compress'], ->
   gulp.watch 'lib/*.coffee', ['compress']
+
 
 gulp.task 'server', ['watch'], ->
   require './server'
