@@ -8,7 +8,7 @@
 ```html
 <script src="http://localhost:6556/eyetribe.min.js"></script>
 <script>
-  EyeTrie.loop(function(frame) {
+  EyeTribe.loop(function(frame) {
     console.log(frame);
   });
 </script>
