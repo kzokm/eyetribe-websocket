@@ -20,7 +20,7 @@ class Connection extends EventEmitter
   connect: ->
     unless @socket
       connection = @
-      @socket = new WebSocket "ws://#{@host}:#{@port}"
+      @socket = new WebSocket (if document.location.protocol.startsWith("https") then "wss" else "ws") + "://#{@host}:#{@port}"
       @socket.onopen = ()->
         # nop
       @socket.onclose = (data)->

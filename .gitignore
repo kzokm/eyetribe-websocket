@@ -1,3 +1,6 @@
 /node_modules
 /tmp
 *.log
+
+# Added to prevent developers from accidentally committing private keys
+*.pem

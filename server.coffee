@@ -12,6 +12,7 @@
 
 net = require 'net'
 http = require 'http'
+https = require 'https'
 ws = require 'websocket.io'
 fs = require 'fs'
 
@@ -21,7 +22,15 @@ SERVER_PORT = 6556
 TRACKER_HOST = '127.0.0.1'
 TRACKER_PORT = 6555
 
-server = http.createServer()
+if fs.existsSync('key.pem') and fs.existsSync('cert.pem')
+  server = https.createServer(
+      key: fs.readFileSync('key.pem'),
+      cert: fs.readFileSync('cert.pem')
+    )
+else
+  server = http.createServer()
+
+server
   .listen SERVER_PORT, SERVER_HOST, ->
     console.log 'LISTEN: ' + SERVER_PORT
   .on 'request', (request, response)->
