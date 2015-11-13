@@ -1,11 +1,11 @@
 class Heartbeat
-  constructor: (@tracker)->
-    heartbeat = @
-    tracker.on 'heartbeatinterval', (intervalMillis)->
+  constructor: (@tracker) ->
+    heartbeat = this
+    tracker.on 'heartbeatinterval', (intervalMillis) ->
       heartbeat.restart intervalMillis
 
-  start: (@intervalMillis)->
-    heartbeat = @
+  start: (@intervalMillis) ->
+    heartbeat = this
     connection = @tracker.connection
 
     if intervalMillis?
@@ -17,14 +17,15 @@ class Heartbeat
         heartbeat.stop()
     else
       @tracker.get 'heartbeatinterval'
-    @
+    this
 
-  restart: (intervalMillis)->
-    if @intervalMillis != intervalMillis
+  restart: (intervalMillis) ->
+    if @intervalMillis isnt intervalMillis
       @stop()
     @start intervalMillis
 
   stop: ->
     @intervalId = clearInterval @intervalId
+
 
 module.exports = Heartbeat

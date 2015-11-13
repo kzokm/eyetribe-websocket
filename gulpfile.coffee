@@ -16,7 +16,7 @@ gulp.task 'browserify', ->
     extensions: ['.coffee']
     debug: true
   .transform 'coffeeify'
-  .bundle (error)->
+  .bundle (error) ->
     if error
       console.error error
       b.end()

@@ -7,8 +7,8 @@ class EyeTribe
   @Point2D = require('./point2d')
   @_ = require('underscore')
 
-  @loop = (config, callback)->
-    if typeof config == 'function'
+  @loop = (config, callback) ->
+    if typeof config is 'function'
       [callback, config] = [config, {}]
     @loopTracker = new @Tracker config
       .loop callback

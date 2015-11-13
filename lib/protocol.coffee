@@ -36,13 +36,13 @@ class Protocol
   @TRACKER_CONNECTED_NOSTREAM = 4
 
 
-  request: (category, request, values)->
+  request: (category, request, values) ->
     JSON.stringify
       category: category
       request: request
       values: values
 
-  response: (json)->
+  response: (json) ->
     category: category
     request: request
     values: values
